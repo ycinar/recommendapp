@@ -3,6 +3,8 @@
 var io = require('socket.io').listen(8080);
 
 io.sockets.on('connection', function (socket) {
+
+  /* saves the nickname */
   socket.on('set nickname', function (name) {
     socket.set('nickname', name, function () {
     });
