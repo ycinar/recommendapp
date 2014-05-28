@@ -1,4 +1,4 @@
-recommendapp
+Recommendapp
 ============
 
 There are two main components: client and server. Client refers to the end user application, i.e. Android app or iPhone app. Server refers to the server application which stores data and undertakes the backend related tasks.
