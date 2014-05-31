@@ -22,9 +22,12 @@ exports.UserModel = mongoose.model('user', exports.UserSchema);
 
 /* Reccommend Request Model begin */
 
-exports.RequestSchema = new Schema({
-	from: Schema.Types.ObjectId,
-	to: [Schema.Types.ObjectId],	// more than one receiver
+/*Using String type for sender and receivers seems easier. 
+ *Mongodb's find method can be used for finding user with the given id of the user -a string
+ */
+exports.RecommendRequestSchema = new Schema({
+	from: String,
+	to: [String],	// more than one receiver
 	what: String,
 	where: String,
 	desc: String
@@ -33,6 +36,6 @@ exports.RequestSchema = new Schema({
 // add methods here.
 
 
-exports.RequestModel = mongoose.model('request', exports.RequestSchema);
+exports.RecommendRequestModel = mongoose.model('request', exports.RecommendRequestSchema);
 
 /* Reccommend Request Model end */
