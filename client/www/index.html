@@ -1,145 +1,168 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<meta charset="utf-8" />
-		<meta name="format-detection" content="telephone=no" />
-		<meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi" />
-		<link rel="stylesheet" type="text/css" href="css/index.css" />
-		<title>Hello World</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<link rel="stylesheet" href="js/jquery-mobile-1.4.2/jquery.mobile-1.4.2.min.css">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+		<script src="js/jquery-1.11.1.js"></script>
+		<script src="js/jquery-mobile-1.4.2/jquery.mobile-1.4.2.min.js"></script>
 	</head>
 	<body>
-		<div id="log">
-			waiting...
-		</div>
+		<div data-role="page">
 
+			<div data-role="header" class="ui-icon-home ui-btn-icon-bottom">
+				<h1>Recommend App Home Page</h1>
+			</div>
+
+			<form>
+				<label for="phoneNumberInput">
+					<br>
+					Phone number:</label>
+				<input type="text" id="phoneNumberInput" data-clear-btn="true" value="" placeholder="Phone Number">
+				<label for="nameInput">Name:</label>
+				<input type="text" id="nameInput" data-clear-btn="true" value="" placeholder="Name">
+				<a href="#recommendPage" class="ui-btn" onclick=connect()>Connect</a>
+				<p id="log">Waiting...</p>
+			</form>
+			<div data-role="footer">
+				<h1>Recommend App Home Page</h1>
+			</div>
+		</div>
+		
+		<div data-role="page" id="recommendPage">
+			
+			<div data-role="header">
+				Recommend Page
+			</div>
+			<p id = "connectionInfo"></p>
+			<form>
+				<label for="what">
+					What:
+				</label>
+				<input type="text" id="what" data-clear-btn="true" value="" placeholder="What">
+
+				<label for="where">
+					Where:
+				</label>
+				<input type="text" id="where" data-clear-btn="true" value="" placeholder="Where">
+
+				<label for="desc">
+					Description:
+				</label>
+				<input type="text" id="desc" data-clear-btn="true" value="" placeholder="What">
+				
+				<label for="receivers">
+					Receivers:
+				</label>
+				<input type="text" id="receivers" data-clear-btn="true" value="" placeholder="<phone number>,<phone number>,...">
+			</form>
+			<a href="" class="ui-btn" onclick="sendRequest()">Send</a>
+			<p id="progressArea"> </p>
+			<p id="incomingRecommendRequest">Incoming recommend requests:</p>
+		</div>
+		<script>
+			var phoneNumber;
+			var name;
+			
+			/*
+			 * With the given phone number and name in the form, connects to the server and 
+			 * displays a succesfully connected message in the web page.
+			 */
+			function connect() {
+				/* get the phone number and name of the user. */
+				phoneNumber = document.getElementById("phoneNumberInput").value;
+				console.log('PhoneNumber: ' + phoneNumber);
+				name = document.getElementById("nameInput").value;
+				console.log('Name: ' + name);
+				
+				/* connect to the server with given phone number and name. */
+				socket.emit('connectToServer', phoneNumber, '42', name);
+				
+				document.getElementById("connectionInfo").innerHTML = 'Connected to the server with the phone number: ' + 
+																		phoneNumber + ', name: ' + name;
+			}
+			
+			var what;
+			var where;
+			var description;
+			var receivers;
+			var requestCounter = 0;
+			
+			/**
+			 * With the given -in the form, what, where, description, receivers values, sends a recommend request to the server,
+			 * and displays a request successfully has been sent message.
+			 */
+			function sendRequest() {
+				what = document.getElementById("what").value;
+				where = document.getElementById("where").value;
+				description = document.getElementById("desc").value;
+				receivers = document.getElementById("receivers").value;
+				
+				/* get receivers as an array. Receiver form format: 
+				 * <phone number>,<phone number>,...
+				 */
+				receivers = receivers.split(",");	
+				
+				// send request to the server.
+				socket.emit('sendRecommendRequest', phoneNumber, receivers, what, where, description);
+				
+				var progressArea = document.getElementById("progressArea");
+				progressArea.innerHTML = "Request has been sent." + "(" + (++requestCounter) + ")";
+			}
+		</script>
 		<script>
 			var LOCALHOST_FOR_PC = "http://127.0.0.1:8080";
 			var LOCALHOST_FOR_MOBILE = "http://10.0.2.2:8080";
 			var CURRENT_LOCALHOST = LOCALHOST_FOR_MOBILE;
+			var SERVER = CURRENT_LOCALHOST;
 			var socket;
-			var username;
-			var message;
-			var messages = [];
+			var log = document.getElementById('log');
 		</script>
-
-		<!-- Username input-->
-		<p>
-			Username
-		</p>
-		<input id="usernameInput" type="text">
-		<button onclick="saveUsername()">
-			Save username
-		</button>
-
-		<p id='usernameProgress'> </p>
-
-		<script>
-			/**
-			 * Saves username on the server, and displays a used username message.
-			 */
-			function saveUsername() {
-				inp = document.getElementById('usernameInput');
-				inpValue = inp.value;
-				// store input
-				inp.value = "";
-				// clear the input area.
-
-				/* save username -> calls "set nickname" method of the server with username data. */
-				socket.emit('set nickname', inpValue);
-
-				resp = document.getElementById('usernameProgress');
-				resp.innerHTML = "Used username: " + inpValue;
-			}
-		</script>
-
-		<!-- Message input -->
-		<p>
-			Message:
-		</p>
-		<input id="messageInput" type="text">
-
-		<button onclick="sendMessage()">
-			Send message
-		</button>
-
-		<p id="userMessageArea"> </p>
-		<script>
-			function sendMessage() {
-				var messageField = document.getElementById('messageInput');
-
-				var msg = messageField.value;
-				messageField.value = "";
-
-				/*
-				 * call "message" function of the server. "message" method gets the saved username and the message sent,
-				 * and sends to the "userMessage" method of the client. "userMessage" also displays the message, couldn't get assigning
-				 * to a global variable - username, message, done.
-				 *
-				 * Explanation: The problem is the functions of the server and the client, works parallelly. The server hasn't updated the
-				 * variables with "userMessage" function of the client, yet.
-				 */
-				socket.emit('message', msg);
-			}
-		</script>
-
-		<script type="text/javascript" src="cordova-2.0.0.js"></script>
+		
+		<script type="text/javascript" src="js/cordova-2.0.0.js"></script>
 		<script type="text/javascript" src="js/socket.io.js"></script>
+		
 		<script>
-
+			
+			var totalRecommendRequests ="";
+			var incomingRequestArea = document.getElementById("incomingRecommendRequest");
+			
+			/**
+			 * Function called when the app starts. This function opens functions to the server use.
+			 */
 			function init() {
 
-				socket = io.connect(CURRENT_LOCALHOST);
-
-				document.getElementById('log').innerHTML = "connecting";
-
-				socket.on('connect', function() {
-					document.getElementById('log').innerHTML = "connected to " + CURRENT_LOCALHOST;
-				});
-
-				socket.on('reconnect', function() {
-					document.getElementById('log').innerHTML = "reconnected";
-				});
-
-				/**
-				 * Gets the data(user, message entry) from the server, and displays.
+				socket = io.connect(SERVER);
+				
+				/*
+				 * For getting recommend requests from other users, the user should implement this method.
+				 * 
+				 * This method gets the request from user, and displays all requests in the web page.
 				 */
-				socket.on('userMessage', function(data) {
-					console.log("Client:" + data.nickname + data.msg);
-					username = data.nickname;
-					message = data.msg;
-
-					// add entry(user, message) to the array.
-					messages.push("User: " + data.nickname + ", Message: " + data.msg + "<br>");
-
-					// sum all entries.
-					var totalEntry = "";
-					for (var i = 0; i < messages.length; i++) {
-						totalEntry += messages[i];
-					}
-
-					// display all entries.
-					var out = document.getElementById('userMessageArea');
-					out.innerHTML = totalEntry;
+				socket.on('getRecommendRequest', function(sender, what, where, description) {
+					var newRequest = "New Request!<br>Sender: " + sender + ", What: " + what + ", Where: " + where + ", Description: " + description;
+					totalRecommendRequests += newRequest + "<br>";
+					incomingRequestArea.innerHTML = totalRecommendRequests;
 				});
-
+				
+				/**
+				 * Called when user disconnects from the server.
+				 */
 				socket.on('disconnect', function() {
 					document.getElementById('log').innerHTML = "disconnected";
 				});
-
-				socket.on('reconnecting', function() {
-					document.getElementById('log').innerHTML = "reconnecting...";
-				});
-
+				
+				/**
+				 * Called when an error occurs in the connection with the server.
+				 */
 				socket.on('error', function() {
 					document.getElementById('log').innerHTML = "error";
 				});
-				// });
 			}
 
-			// for pc, just call init(). for mobile phones, instead of calling init, call phonegap's fuction document.addEventListener(...);
-			//init();
-			document.addEventListener("deviceready", init, false);
-
+			// for pc, just call init(). for mobile phones, instead of calling init, call phonegap's function document.addEventListener(...);
+			init();
+			//document.addEventListener("deviceready", init, false);
 		</script>
 	</body>
 </html>

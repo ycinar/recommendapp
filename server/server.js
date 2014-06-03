@@ -26,12 +26,12 @@ db.once('open', function callback () {
 
 /* generatePassword function end */
 
-/* findUser function begin */
+/* findUserIndex function begin */
 
 /**
  * Finds the index of the specific userin the onlineUsers array. If the user is online, returns index of the user; otherwise returns -1. 
  */
-function findUser(userId) {
+function findUserIndex(userId) {
 	for (var i = 0; i < onlineUsers.length; i++) {
 		if (onlineUsers[i].user.userId == userId) {
 			return i;
@@ -41,7 +41,7 @@ function findUser(userId) {
 	return -1;
 }
 
-/* findUser function end */
+/* findUserIndex function end */
 
 /* server */
 
@@ -200,7 +200,7 @@ io.sockets.on('connection', function (socket) {
 			var undeliveredRequestReceivers = [];
 
 			for (var i = 0; i < receivers.length; i++) {
-				var receiverIndex = findUser(receivers[i]);	// find user index in the onlineUser array.
+				var receiverIndex = findUserIndex(receivers[i]);	// find user index in the onlineUser array.
 				if (receiverIndex !== -1) {	// user is online.
 
 					var receiverSocketId = onlineUsers[receiverIndex].socketId;
@@ -229,7 +229,7 @@ io.sockets.on('connection', function (socket) {
 	socket.on('disconnect', function () {
 		/* clear the user from the onlineUsers array */
 		console.log('User has been disconnected');
-		var indexOfDisconnectedUser = findUser(userId);
+		var indexOfDisconnectedUser = findUserIndex(userId);
 		console.log('Disconnected user: ');
 		console.log(onlineUsers[indexOfDisconnectedUser]);
 		onlineUsers.splice(indexOfDisconnectedUser, 1);
