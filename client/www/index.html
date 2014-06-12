@@ -128,12 +128,13 @@
 		<script>
 			var LOCALHOST_FOR_PC = "http://127.0.0.1:8080";
 			var LOCALHOST_FOR_MOBILE = "http://10.0.2.2:8080";
-			var CURRENT_LOCALHOST = LOCALHOST_FOR_PC;
+			var CURRENT_LOCALHOST = LOCALHOST_FOR_MOBILE;
+			var SERVER = CURRENT_LOCALHOST;
 			var socket;
 			var log = document.getElementById('log');
 		</script>
 		
-		<script type="text/javascript" src="cordova-2.0.0.js"></script>
+		<script type="text/javascript" src="js/cordova-2.0.0.js"></script>
 		<script type="text/javascript" src="js/socket.io.js"></script>
 		
 		<script>
@@ -146,7 +147,7 @@
 			 */
 			function init() {
 
-				socket = io.connect(CURRENT_LOCALHOST);
+				socket = io.connect(SERVER);
 				
 				/*
 				 * For getting recommend requests from other users, the user should implement this method.
