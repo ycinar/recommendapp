@@ -59,8 +59,23 @@
 			<a href="" class="ui-btn" onclick="sendRequest()">Send</a>
 			<p id="progressArea"> </p>
 			<p id="incomingRecommendRequest">Incoming recommend requests:</p>
+			<label for="reply">
+					Reply:
+			</label>
+			<input type="text" id="reply" data-clear-btn="true" value="" placeholder="Reply">
+			<a href = "" class="ui-btn" onclick="sendReply()"> Send</a>
 		</div>
 		<script>
+			
+			/**
+			 * Sends reply to the last gotten recommend request.
+			 */
+			function sendReply() {
+				var reply = document.getElementById("reply").value;
+				console.log(reply);
+				socket.emit("sendReply", senderPhoneNumber, phoneNumber, name, reply);
+			}
+			
 			var phoneNumber;
 			var name;
 			
@@ -126,7 +141,7 @@
 			
 			var totalRecommendRequests ="";
 			var incomingRequestArea = document.getElementById("incomingRecommendRequest");
-			
+			var senderPhoneNumber;
 			/**
 			 * Function called when the app starts. This function opens functions to the server use.
 			 */
@@ -139,12 +154,26 @@
 				 * 
 				 * This method gets the request from user, and displays all requests in the web page.
 				 */
-				socket.on('getRecommendRequest', function(sender, what, where, description) {
+				socket.on('getRecommendRequest', function (sender, what, where, description) {
+					senderPhoneNumber = sender;
 					var newRequest = "New Request!<br>Sender: " + sender + ", What: " + what + ", Where: " + where + ", Description: " + description;
 					totalRecommendRequests += newRequest + "<br>";
 					incomingRequestArea.innerHTML = totalRecommendRequests;
 				});
 				
+				/**
+				 * For getting replies from other users, the user should implement this method.
+				 * 
+				 * This method gets the reply from sender, and displays.
+				 */
+				socket.on('getReply', function (replySenderPhoneNumber, replySenderName, reply) {
+					var previousMessages = incomingRequestArea.value;
+					var replyMessage = "New reply from user: Phone number: " + replySenderPhoneNumber + ", Name: " + replySenderName
+										+ ", for recommend request: " + "What: " + what + ", Where: " + where + ", Description: " + description
+										+ "<br> + Reply: " + reply;
+					totalRecommendRequests += "<br>" + replyMessage;
+					incomingRequestArea.innerHTML = totalRecommendRequests;
+				});
 				/**
 				 * Called when user disconnects from the server.
 				 */
