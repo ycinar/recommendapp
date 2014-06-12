@@ -53,6 +53,7 @@ var RecommendRequest = models.RecommendRequestModel;
 
 var onlineUsers = [];
 var undeliveredRequests = [];
+var undeliveredReplies = [];
 
 var io = require('socket.io').listen(8080);
 
@@ -80,7 +81,7 @@ io.sockets.on('connection', function (socket) {
 		// calculate the real password.
 		actualPass = generatePassword(username);
 
-		// check if actual pass equals the incoming user's pass
+		// check if actual pass is equal with the incoming user's pass
 		if (actualPass !== parseInt(password)) {	// doesn't match, no connection.
 			console.log('Connection refused. Reason: wrong password.');
 			socket.disconnect();
@@ -98,9 +99,13 @@ io.sockets.on('connection', function (socket) {
 		onlineUsers.push({user: connectedUser, socketId: socket.id});
 
 		console.log('New user has been added to the online user array.');
+
+		// display online users.
+		console.log('Online users:');
+		console.log(onlineUsers);
 		
 		userId = username;	// for future use, userId is global. userId = username = phone number of the user.
-
+		console.log('UserId updated to ' + userId);
 		// check if the connected user was in the database.
 		User.findOne({userId: username}, function(err, user) {
 			if (err) {
@@ -113,7 +118,7 @@ io.sockets.on('connection', function (socket) {
 			if (!user) {	// no user matching in the database.
 
 				/* save user in the database. */
-				console.log('Saving the user in the database.');
+				console.log('DB: Saving the user in the database.');
 
 				if (!savedUsername) {
 					savedUsername = '';	// default username.
@@ -125,11 +130,11 @@ io.sockets.on('connection', function (socket) {
 					if (err) {
 						return console.error(err);
 					}
-					console.log('New user: ' + 'username: ' + connectedUser.userId + ' savedUsername: ' + connectedUser.username + ' saved.');
+					console.log('DB: New user: ' + 'username: ' + connectedUser.userId + ' savedUsername: ' + connectedUser.username + ' saved.');
 				});
 			} else {	// found the user in the db.
-				console.log('The user is already registered in the database.');
-				console.log('Checking for update.');
+				console.log('DB: The user is already registered in the database.');
+				console.log('DB: Checking for update.');
 
 				/* update the username if a new one is provided. */
 				if (user.username != savedUsername) {
@@ -139,15 +144,16 @@ io.sockets.on('connection', function (socket) {
 						if (err) {
 							return console.error(err);
 						}
-						console.log('Updated. New username: ' + savedUsername + ' for userId: ' + username);
+						console.log('DB: Updated. New username: ' + savedUsername + ' for userId: ' + username);
 					});
 				} else {
-					console.log('No need to update.');
+					console.log('DB: No need to update.');
 				}
 				
 				/* if the user is found in the db, there may some requests to him undelivered */
 				/* if there is any undelivered request to the user, send to him. */
 
+				// NOTE: can be written in another method.
 				for (var requestIndex = 0; requestIndex < undeliveredRequests.length; requestIndex++) {
 
 					var request = undeliveredRequests[requestIndex];
@@ -165,6 +171,19 @@ io.sockets.on('connection', function (socket) {
 						}
 					} else {
 						console.log('No undelivered requests for new connecting user.');
+					}
+				}
+
+				/* there may also be some undelivered replies for the user, deliver them */
+				// NOTE: can be written in another method.
+				for (var replyIndex = 0; replyIndex < undeliveredReplies.length; replyIndex++) {
+					var reply = undeliveredReplies[replyIndex];
+					if (reply.receiver == username) {	// there is an undelivered reply for new connecting user.
+						io.sockets.socket(socket.id).emit('getReply', reply.senderPhoneNumber, reply.senderName, reply.reply);
+						console.log('Reply ');
+						console.log(reply);
+						console.log(' delivered for new connecting user.');
+						undeliveredReplies.splice(replyIndex--, 1);	// length has shrinked, so decrease requestIndex before loop update.
 					}
 				}
 			}
@@ -230,9 +249,35 @@ io.sockets.on('connection', function (socket) {
 		/* clear the user from the onlineUsers array */
 		console.log('User has been disconnected');
 		var indexOfDisconnectedUser = findUserIndex(userId);
-		console.log('Disconnected user: ');
-		console.log(onlineUsers[indexOfDisconnectedUser]);
-		onlineUsers.splice(indexOfDisconnectedUser, 1);
+		if (indexOfDisconnectedUser == -1) {
+			console.log('Couldnt find the disconnected user. The user id was ' + userId);
+		} else {
+			console.log('Disconnected user: ');
+			console.log(onlineUsers[indexOfDisconnectedUser]);
+			onlineUsers.splice(indexOfDisconnectedUser, 1);
+
+			console.log('Online users: ');
+			console.log(onlineUsers);
+		}
+	});
+
+	/*
+	 * The function for sending recommend replies to a specific user.
+	 */
+	socket.on('sendReply', function (replyReceiver, replySenderPhoneNumber, replySenderName, reply) {
+		console.log('Sending reply.');
+		var replyReceiverIndex = findUserIndex(replyReceiver);
+		if (replyReceiverIndex != -1) {	// the reply receiver is online.
+			var receiverSocketId = onlineUsers[replyReceiverIndex].socketId;
+			io.sockets.socket(receiverSocketId).emit('getReply', replySenderPhoneNumber, replySenderName, reply);
+			console.log('Reply sent.');
+		} else {
+			console.log('Reply receiver is not online.');
+
+			// store the reply for delivery. The reply will be delivered when the user connects.
+			undeliveredReplies.push({senderPhoneNumber: replySenderPhoneNumber, senderName: replySenderName, receiver: replyReceiver, reply: reply});
+			console.log('Reply saved for delivery.');
+		}
 	});
 });
 
