@@ -231,7 +231,7 @@ io.sockets.on('connection', function (socket) {
 			/* save the recommend request also on the phone. need to use the id, so do it now. */
 			socket.emit('saveSentRecommendRequest', recommendRequest);
 
-			
+
 			/*  send request to all receivers: if they are online, send now; else, add to the undelivered request array */
 			var undeliveredRequestReceivers = [];
 
@@ -339,7 +339,7 @@ io.sockets.on('connection', function (socket) {
 						var contactWrapped = contact;
 						var pnIndexWrapped = pnIndex;
 						var contactIndexWrapped = contactIndex;
-						var phoneNumberWrapped = contactWrapped.phoneNumbers[pnIndexWrapped];
+						var phoneNumberWrapped = contactWrapped.phoneNumbers[pnIndexWrapped].value;	// value is the phone number.
 						User.findOne({phoneNumber: phoneNumberWrapped}, function (err, contactFromDb) {
 							if (err) {
 								return console.error(err);

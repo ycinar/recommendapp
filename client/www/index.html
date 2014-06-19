@@ -6,67 +6,108 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 		<script src="js/jquery-1.11.1.js"></script>
 		<script src="js/jquery-mobile-1.4.2/jquery.mobile-1.4.2.min.js"></script>
+		<script type="text/javascript" src="js/socket.io.js"></script>
+		<script type="text/javascript" charset="utf-8" src="cordova.js"></script>
 	</head>
+
 	<body>
-		<div data-role="page">
-
-			<div data-role="header" class="ui-icon-home ui-btn-icon-bottom">
-				<h1>Recommend App Home Page</h1>
-			</div>
-
-			<form>
-				<label for="phoneNumberInput">
-					<br>
-					Phone number:</label>
-				<input type="text" id="phoneNumberInput" data-clear-btn="true" value="" placeholder="Phone Number">
-				<label for="nameInput">Name:</label>
-				<input type="text" id="nameInput" data-clear-btn="true" value="" placeholder="Name">
-				<a href="#recommendPage" class="ui-btn" onclick=connect()>Connect</a>
-				<p id="log">Waiting...</p>
-			</form>
-			<div data-role="footer">
-				<h1>Recommend App Home Page</h1>
-			</div>
-		</div>
 		
-		<div data-role="page" id="recommendPage">
-			
-			<div data-role="header">
-				Recommend Page
+		<!-- HomePage start -->
+		<div data-role="page" id="homePage">
+		
+			<div class="navbar">
+				<!-- navigation bar added here -->
 			</div>
-			<p id = "connectionInfo"></p>
+			
 			<form>
-				<label for="what">
-					What:
-				</label>
+			
+				<label for="what">What:</label>
 				<input type="text" id="what" data-clear-btn="true" value="" placeholder="What">
 
-				<label for="where">
-					Where:
-				</label>
+				<label for="where">Where:</label>
 				<input type="text" id="where" data-clear-btn="true" value="" placeholder="Where">
 
-				<label for="desc">
-					Description:
-				</label>
+				<label for="desc">Description:</label>
 				<input type="text" id="desc" data-clear-btn="true" value="" placeholder="What">
 				
-				<label for="receivers">
-					Receivers:
-				</label>
-				<input type="text" id="receivers" data-clear-btn="true" value="" placeholder="<phone number>,<phone number>,...">
 			</form>
-			<a href="" class="ui-btn" onclick="sendRequest()">Send</a>
+			
+			<a href="" data-role="button" class="ui-btn" onclick="storeAndGoToContacts()">Add Contacts</a>
+		</div>
+		<!-- HomePage end -->
+		
+		<!-- RecommendPage start -->
+		<div data-role="page" id="recommendPage">
+			
+			<div class="navbar">
+				<!-- navigation bar added here -->
+			</div>
+			
+			
+			
 			<p id="progressArea"> </p>
+			
 			<p id="incomingRecommendRequest">Incoming recommend requests:</p>
-			<label for="reply">
-					Reply:
-			</label>
+			
+			<label for="reply">Reply:</label>
 			<input type="text" id="reply" data-clear-btn="true" value="" placeholder="Reply">
 			<a href = "" class="ui-btn" onclick="sendReply()"> Send</a>
 		</div>
+		<!-- RecommendPage end -->
+		
+		<!-- ContactsPage start -->
+		<div data-role="page" id="contactsPage">
+			
+			<div class="navbar">
+				<!-- navigation bar added here -->
+			</div>
+			
+			<div  data-role="fieldcontain" id="contactsList">
+				<pre>Contacts	  Phone Number     OnApp</pre>
+				<a data-role="button" onclick="sendRequest()">Send Request</a>
+			</div>
+			
+		</div>
+		<!-- ContactsPage end -->
+				
+		<!-- RegisterPage start -->
+		<div data-role="page" id="registerPage">
+			
+			<div class="navbar">
+				<!-- navigation bar added here -->
+			</div>
+			
+			<!-- Input form for Phone number and Name start-->
+			<form>
+				<label for="phoneNumberInput"><br>Phone number:</label>
+				<input type="text" id="phoneNumberInput" data-clear-btn="true" value="" placeholder="Phone Number">
+				
+				<label for="nameInput">Name:</label>
+				<input type="text" id="nameInput" data-clear-btn="true" value="" placeholder="Name">
+			</form>
+			<!-- Input form for Phone number and Name end-->
+			
+			<!-- AddContacts button, changes the current page as contactsPage and connects to the server.-->
+			<div style="position: absolute; left: 50%;">	<!-- at the center of the screen -->
+				<a href="#recommendPage" data-role="button" data-inline="true" onclick="saveAndConnect()">Save</a>
+    		</div>
+    		
+    		<!-- Server log -->
+			<p id="log"> </p>
+		</div>	
+		<!-- RegisterPage end -->
+		
 		<script>
 			
+			function storeAndGoToContacts() {
+				what = document.getElementById("what").value;
+				where = document.getElementById("where").value;
+				description = document.getElementById("desc").value;
+				
+				$.mobile.pageContainer.pagecontainer("change", "#contactsPage");
+				
+				recommendPageFilled = true;
+			}
 			/**
 			 * Sends reply to the last gotten recommend request.
 			 */
@@ -80,19 +121,26 @@
 			var name;
 			
 			/*
-			 * With the given phone number and name in the form, connects to the server and 
+			 * With the given phone number and name in the form, stores the data, connects to the server and 
 			 * displays a succesfully connected message in the web page.
 			 */
-			function connect() {
-				/* get the phone number and name of the user. */
+			function saveAndConnect() {
+				
+				/* get and save the phone number and name of the user. */
 				phoneNumber = document.getElementById("phoneNumberInput").value;
 				console.log('PhoneNumber: ' + phoneNumber);
+				window.localStorage.setItem("phoneNumber", phoneNumber);
+				
 				name = document.getElementById("nameInput").value;
 				console.log('Name: ' + name);
+				window.localStorage.setItem("name", name);
+				
+				/* update recommendAppUsedBefore */
+				window.localStorage.setItem("recommendAppUsedBefore", true);
 				
 				/* connect to the server with given phone number and name. */
+				console.log("Connecting to the server.");
 				socket.emit('connectToServer', phoneNumber, '42', name);
-				
 				document.getElementById("connectionInfo").innerHTML = 'Connected to the server with the phone number: ' + 
 																		phoneNumber + ', name: ' + name;
 			}
@@ -102,24 +150,40 @@
 			var description;
 			var receivers;
 			var requestCounter = 0;
-			
+			var recommendPageFilled = false;
+			var sentRecommendRequests = [];
 			/**
 			 * With the given -in the form, what, where, description, receivers values, sends a recommend request to the server,
 			 * and displays a request successfully has been sent message.
 			 */
-			function sendRequest() {
-				what = document.getElementById("what").value;
-				where = document.getElementById("where").value;
-				description = document.getElementById("desc").value;
-				receivers = document.getElementById("receivers").value;
+			function sendRequest() {				
 				
-				/* get receivers as an array. Receiver form format: 
-				 * <phone number>,<phone number>,...
-				 */
-				receivers = receivers.split(",");	
+				if (!recommendPageFilled) {
+					return;
+				}
+				recommendPageFilled = false;
+				
+				var receivers = [];
+				
+				console.log("Sending request.");
+				
+				for (var checkboxIndex = 0; checkboxIndex < contactCount; checkboxIndex++) {
+					var checkbox = document.getElementById("checkbox" + checkboxIndex);
+					if (checkbox.checked) {
+						console.log("Receiver: " + checkbox.value);
+						var receiverPhoneNumber = checkbox.value.split(" ")[1];
+						receivers.push(receiverPhoneNumber);
+					}
+				}
+				if (receivers.length == 0) {
+					alert("You need to specify at least one person to send the request.");
+					return;
+				}
+  				console.log("Receivers: ");
+  				console.log(receivers);
 				
 				// send request to the server.
-				socket.emit('sendRecommendRequest', phoneNumber, receivers, what, where, description);
+				socket.emit('sendRecommendRequest', receivers, what, where, description);
 				
 				var progressArea = document.getElementById("progressArea");
 				progressArea.innerHTML = "Request has been sent." + "(" + (++requestCounter) + ")";
@@ -129,13 +193,9 @@
 			var LOCALHOST_FOR_PC = "http://127.0.0.1:8080";
 			var LOCALHOST_FOR_MOBILE = "http://10.0.2.2:8080";
 			var CURRENT_LOCALHOST = LOCALHOST_FOR_MOBILE;
-			var SERVER = CURRENT_LOCALHOST;
 			var socket;
 			var log = document.getElementById('log');
 		</script>
-		
-		<script type="text/javascript" src="js/cordova-2.0.0.js"></script>
-		<script type="text/javascript" src="js/socket.io.js"></script>
 		
 		<script>
 			
@@ -143,20 +203,83 @@
 			var incomingRequestArea = document.getElementById("incomingRecommendRequest");
 			var senderPhoneNumber;
 			/**
-			 * Function called when the app starts. This function opens functions to the server use.
+			 * Function called when the app starts. This function opens functions to the server use, 
+			 * and calls checkFirstTimeLaunch() function.
 			 */
 			function init() {
+				// add navigation bars to all pages. nice.
+				$(".navbar").load( "navbar.html" );
+				
+				openSocketConnection();
+				checkFirstTimeLaunch();
+				loadContacts();
+				
+			}
+			
+			/*
+			 * Loads all the contacts in the phone.
+			 */
+			function loadContacts() {
+				// save a test contact.(working)
+				//var newContact = navigator.contacts.create({displayName: "testUser", phoneNumbers: ["5678"]});
+				//newContact.save(contactSaveOnSuccess, contactSaveOnError);
+				//var fields = ["displayName", "phoneNumbers"];
+				var options = new ContactFindOptions();
+    			options.filter="";          // empty search string returns all contacts
+    			options.multiple=true;      // return multiple results
+    			filter = ["displayName", "phoneNumbers"];
+				navigator.contacts.find(filter, contactFindOnSuccess, contactFindOnError, options);
+			}
+			
+			function contactSaveOnError(contactError) {
+				alert('Error occured while saving the contact.');
+			}
+			function contactSaveOnSuccess(contact) {
+				console.log("Contact");
+				console.log(contact);
+				console.log('saved.');
+			}
+			/*
+			 * @TODO: send all contacts to the server, and get the results back if they are using the app, and update in the page.
+			 * Called if contacts found.
+			 */
+			function contactFindOnSuccess(contact) {
+				console.log("Contacts: ");
+				console.log(contact);
+				console.log("Checking contacts whether they are on app.");
+				socket.emit('checkContactsOnApp', contact);
+			}
+			
+			/*
+			 * Called any error occurs while finding the contacts in the phone.
+			 */
+			function contactFindOnError(contactError) {
+				alert('Error finding contacts. Error:' + contactError);
+			}
+			
+			function addCheckboxToContactsPage(name, id) {
+   				var container = $('#contactsList');
 
-				socket = io.connect(SERVER);
+   				$('<input />', { type: 'checkbox', id: 'checkbox'+id, value: name, class: 'custom' }).appendTo(container);
+   				$('<label />', { 'for': 'checkbox'+id, text: name }).appendTo(container);
+			}
+
+			
+			var userOnApp = false;
+			var contactCount = 0;
+			
+			function openSocketConnection() {
+				// connect to the server.
+				socket = io.connect(CURRENT_LOCALHOST);
 				
 				/*
 				 * For getting recommend requests from other users, the user should implement this method.
 				 * 
 				 * This method gets the request from user, and displays all requests in the web page.
 				 */
-				socket.on('getRecommendRequest', function (sender, what, where, description) {
-					senderPhoneNumber = sender;
-					var newRequest = "New Request!<br>Sender: " + sender + ", What: " + what + ", Where: " + where + ", Description: " + description;
+				socket.on('getRecommendRequest', function (recommendRequest) {
+					var newRequest = "New Request!<br>" + "Id: " + recommendRequest.id + ", Date: " + recommendRequest.date + ", Sender: " + recommendRequest.from + ", What: " + 
+									recommendRequest.what + ", Where: " + recommendRequest.where + ", Description: " + recommendRequest.description;
 					totalRecommendRequests += newRequest + "<br>";
 					incomingRequestArea.innerHTML = totalRecommendRequests;
 				});
@@ -166,13 +289,33 @@
 				 * 
 				 * This method gets the reply from sender, and displays.
 				 */
-				socket.on('getReply', function (replySenderPhoneNumber, replySenderName, reply) {
+				socket.on('getReply', function (reply) {
 					var previousMessages = incomingRequestArea.value;
-					var replyMessage = "New reply from user: Phone number: " + replySenderPhoneNumber + ", Name: " + replySenderName
-										+ ", for recommend request: " + "What: " + what + ", Where: " + where + ", Description: " + description
-										+ "<br> + Reply: " + reply;
+					var replyMessage = "New reply from user: Request id: " + reply.requestId + " date: " + reply.date + "Reply: " + reply.reply;
 					totalRecommendRequests += "<br>" + replyMessage;
 					incomingRequestArea.innerHTML = totalRecommendRequests;
+				});
+				
+				socket.on('updateUsersOnApp', function (contacts) {
+					contactCount = contacts.length;
+					for (var i = 0; i < contacts.length; i++) {
+						// var checkBoxId = '"checkBox' + i + '"';
+						var contact = contacts[i];
+						var onApp = contact.onApp ? 'Yes' : 'No';
+						var userData = contact.displayName + ' ' + contact.phoneNumber + ' ' + onApp;
+// 			
+						// $("#contactsList").append('<input type="checkbox" id=' + checkBoxId + ' class="custom" />');
+						// $("#contactsCheckList").append('<label for=' + checkBoxId + '>' + userData + '</label>');
+						addCheckboxToContactsPage(userData, i);
+					}
+				});
+				
+				socket.on('saveSentRecommendRequest', function (recommendRequest) {
+					console.log("Saving sent recommend request.");
+					sentRecommendRequests.push(recommendRequest);
+					console.log("Saved.");
+					console.log("Recommend requests on the phone: ");
+					console.log(sentRecommendRequests);
 				});
 				/**
 				 * Called when user disconnects from the server.
@@ -185,13 +328,52 @@
 				 * Called when an error occurs in the connection with the server.
 				 */
 				socket.on('error', function() {
-					document.getElementById('log').innerHTML = "error";
+					navigator.notification.alert("Connection problem. Please check your internet connection, and try again.", alertCallback, 'Connection error', 'OK');
 				});
 			}
-
+			
+			
+			function alertCallback() {
+				console.log('Connection problem occured.');
+			}
+			
+			/*
+			 * Checks if the app is used for the first time, and changes the page according to the answer.
+			 * If yes, connects to the server, else redirects to the register page.
+			 */
+			function checkFirstTimeLaunch() {
+				
+				window.localStorage.clear();	// to test.
+				
+				// check if the user is using the app for the first time.
+				var recommendAppUsedBefore = window.localStorage.getItem("recommendAppUsedBefore");
+				if (recommendAppUsedBefore) {	// if used
+					console.log("App is used before. Redirecting to the home page.");
+					$.mobile.pageContainer.pagecontainer("change", "#homePage");	// change page as requestPage
+					
+					/* get the phone number and name saved in the phone, and connect to the server. */
+					phoneNumber = window.localStorage.getItem("phoneNumber");
+					name = window.localStorage.getItem("name");
+					
+					if (!phoneNumber || !name) {
+						navigator.notification.alert("Couldn't find stored login data.'", alertCallback, 'Login error', 'OK');
+						console.log("Redirecting to register page.");
+						$.mobile.pageContainer.pagecontainer("change", "#registerPage");
+						return;	
+					}
+					
+					socket.emit("connectToServer", phoneNumber, 42, name);
+					
+				} else {
+					console.log("App is used for the first time. Redirecting to register page.");
+					$.mobile.pageContainer.pagecontainer("change", "#registerPage");	// change page as registerPage
+					
+					// ! The update of the recommendAppUsedBefore is done in the register page. !
+				}
+			}
 			// for pc, just call init(). for mobile phones, instead of calling init, call phonegap's function document.addEventListener(...);
-			init();
-			//document.addEventListener("deviceready", init, false);
+			//init();
+			document.addEventListener("deviceready", init, false);
 		</script>
 	</body>
 </html>
