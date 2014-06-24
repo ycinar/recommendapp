@@ -45,6 +45,7 @@ exports.RecommendRequestModel = mongoose.model('request', exports.RecommendReque
 /* Reply Model start */
 exports.ReplySchema = new Schema({
 	requestId: 0,	// reply is sent to the request with id: requestId
+	receiver: String,
 	date: Date,
 	sender: String,
 	reply: String
