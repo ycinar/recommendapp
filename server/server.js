@@ -175,7 +175,7 @@ io.sockets.on('connection', function (socket) {
 
 					if (indexOfUser !== -1) {	// there is an undelivered request for user.
 						console.log('Undelivered Request for new connecting user ' + phoneNumber);
-						io.sockets.socket(socket.id).emit('getRecommendRequest', {id: request.id, date: request.date, from: request.from, what: request.what, where: request.where, description: request.description});	// send the request.
+						io.sockets.socket(socket.id).emit('getRecommendRequest', request);	// send the request.
 						console.log('Delivered.');
 						request.receivers.splice(indexOfUser, 1);	// clean the user from the list, because the request has been sent.
 
@@ -193,7 +193,7 @@ io.sockets.on('connection', function (socket) {
 				for (var replyIndex = 0; replyIndex < undeliveredReplies.length; replyIndex++) {
 					var reply = undeliveredReplies[replyIndex];
 					if (reply.receiver == phoneNumber) {	// there is an undelivered reply for new connecting user.
-						io.sockets.socket(socket.id).emit('getReply', reply.requestId, reply.senderPhoneNumber, reply.reply);
+						io.sockets.socket(socket.id).emit('getReply', reply);
 						console.log('Reply ');
 						console.log(reply);
 						console.log(' delivered for new connecting user.');
@@ -215,8 +215,8 @@ io.sockets.on('connection', function (socket) {
 			socket.disconnect();
 			return;
 		} else {	// we have a valid connection.
-
-			var recommendRequest = new RecommendRequest({id: parseInt(recommendRequestCounter.value), date: new Date(), from: _phoneNumber, to: receivers, what: what, where: where, desc: description});
+			var now = (new Date()).toISOString().substring(0,19).replace('T', ' ');
+			var recommendRequest = new RecommendRequest({id: parseInt(recommendRequestCounter.value), date: now, from: _phoneNumber, to: receivers, what: what, where: where, desc: description});
 		
 			console.log('Coming recommend request: ' + recommendRequest);
 
@@ -226,11 +226,9 @@ io.sockets.on('connection', function (socket) {
 					return console.error(err);
 				}
 				console.log('DB: New recommend request ' + recommendRequest + ' saved.');
+				/* save the recommend request also on the phone. need to use the id, so do it now. */
+				socket.emit('saveSentRecommendRequest', recommendRequest);
 			});
-
-			/* save the recommend request also on the phone. need to use the id, so do it now. */
-			socket.emit('saveSentRecommendRequest', recommendRequest);
-
 
 			/*  send request to all receivers: if they are online, send now; else, add to the undelivered request array */
 			var undeliveredRequestReceivers = [];
@@ -242,7 +240,7 @@ io.sockets.on('connection', function (socket) {
 					var receiverSocketId = onlineUsers[receiverIndex].socketId;
 
 					// send request to the specific user which is identified by its socket id in the server.
-					io.sockets.socket(receiverSocketId).emit('getRecommendRequest', {id: parseInt(recommendRequestCounter.value), date: recommendRequest.date, from: _phoneNumber, what: what, where: where, description: description});
+					io.sockets.socket(receiverSocketId).emit('getRecommendRequest', recommendRequest);
 
 				} else {	// user is not online.
 					undeliveredRequestReceivers.push(receivers[i]);
@@ -250,7 +248,7 @@ io.sockets.on('connection', function (socket) {
 			}
 			if (undeliveredRequestReceivers.length !== 0) {	// some of the users are not online, some messages couldn't be delivered.
 				console.log('Receivers ' + undeliveredRequestReceivers + ' are not online for request ' + recommendRequest);
-				undeliveredRequests.push({id: parseInt(recommendRequestCounter.value), date: recommendRequest.date, from: _phoneNumber, what: what, where: where, description: description, receivers: undeliveredRequestReceivers});
+				undeliveredRequests.push({id: parseInt(recommendRequestCounter.value), date: recommendRequest.date, from: _phoneNumber, what: what, where: where, desc: description, receivers: undeliveredRequestReceivers});
 				console.log('Undelivered Requests: ');
 				console.log(undeliveredRequests);
 				console.log('Request saved for delivery to not online users');
@@ -296,13 +294,16 @@ io.sockets.on('connection', function (socket) {
 			socket.disconnect();
 			return;
 		} else {
-			var reply = new Reply({requestId: requestId, date: new Date(), sender: _phoneNumber, reply: reply});
+			var now = (new Date()).toISOString().substring(0,19).replace('T', ' ');
+			var reply = new Reply({requestId: requestId, date: now, sender: _phoneNumber, receiver: replyReceiver, reply: reply});
 			reply.save(function (err) {
 				if (err) {	// if any error occures.
 					return console.error(err);
 				}
 				console.log('DB: New reply ' + reply + ' saved.');
-			});
+				/* save sent reply also on the phone. */
+				socket.emit('saveSentReply', reply);
+			});	
 			console.log('Sending reply.');
 			var replyReceiverIndex = findUserIndex(replyReceiver);
 			if (replyReceiverIndex != -1) {	// the reply receiver is online.
@@ -313,7 +314,7 @@ io.sockets.on('connection', function (socket) {
 				console.log('Reply receiver is not online.');
 
 				// store the reply for delivery. The reply will be delivered when the user connects.
-				undeliveredReplies.push({requestId: requestId, senderPhoneNumber: _phoneNumber, receiver: replyReceiver, reply: reply});
+				undeliveredReplies.push(reply);
 				console.log('Reply saved for delivery.');
 			}
 		}
