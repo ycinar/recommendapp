@@ -1,2 +1,2 @@
-/Users/ycinar/dev/recommendapp/client/platforms/android/ant-build/AndroidManifest.xml : \
-/Users/ycinar/dev/recommendapp/client/platforms/android/AndroidManifest.xml \
+/home/ercan/RecommendAppPushNotification/platforms/android/ant-build/AndroidManifest.xml : \
+/home/ercan/RecommendAppPushNotification/platforms/android/AndroidManifest.xml \

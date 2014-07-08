@@ -1,9 +1,27 @@
-/Users/ycinar/dev/recommendapp/client/platforms/android/ant-build/classes.dex : \
-/Users/ycinar/dev/recommendapp/client/platforms/android/ant-build/classes/com/recommend/app/BuildConfig.class \
-/Users/ycinar/dev/recommendapp/client/platforms/android/ant-build/classes/com/recommend/app/R$attr.class \
-/Users/ycinar/dev/recommendapp/client/platforms/android/ant-build/classes/com/recommend/app/R$drawable.class \
-/Users/ycinar/dev/recommendapp/client/platforms/android/ant-build/classes/com/recommend/app/R$string.class \
-/Users/ycinar/dev/recommendapp/client/platforms/android/ant-build/classes/com/recommend/app/R$xml.class \
-/Users/ycinar/dev/recommendapp/client/platforms/android/ant-build/classes/com/recommend/app/R.class \
-/Users/ycinar/dev/recommendapp/client/platforms/android/ant-build/classes/com/recommend/app/RecommendApp.class \
-/Users/ycinar/dev/recommendapp/client/platforms/android/ant-build/dexedLibs/classes-0ee6e91c8c6075a8ad48d3d8bde6c58a.jar \
+/home/ercan/RecommendAppPushNotification/platforms/android/ant-build/classes.dex : \
+/home/ercan/RecommendAppPushNotification/platforms/android/ant-build/classes/org/apache/cordova/device/Device.class \
+/home/ercan/RecommendAppPushNotification/platforms/android/ant-build/classes/org/apache/cordova/contacts/ContactManager$4.class \
+/home/ercan/RecommendAppPushNotification/platforms/android/ant-build/classes/org/apache/cordova/contacts/ContactManager$1.class \
+/home/ercan/RecommendAppPushNotification/platforms/android/ant-build/classes/org/apache/cordova/contacts/ContactInfoDTO.class \
+/home/ercan/RecommendAppPushNotification/platforms/android/ant-build/classes/org/apache/cordova/contacts/ContactManager$2.class \
+/home/ercan/RecommendAppPushNotification/platforms/android/ant-build/classes/org/apache/cordova/contacts/ContactAccessor.class \
+/home/ercan/RecommendAppPushNotification/platforms/android/ant-build/classes/org/apache/cordova/contacts/ContactManager$3.class \
+/home/ercan/RecommendAppPushNotification/platforms/android/ant-build/classes/org/apache/cordova/contacts/ContactAccessorSdk5.class \
+/home/ercan/RecommendAppPushNotification/platforms/android/ant-build/classes/org/apache/cordova/contacts/ContactAccessor$WhereOptions.class \
+/home/ercan/RecommendAppPushNotification/platforms/android/ant-build/classes/org/apache/cordova/contacts/ContactManager.class \
+/home/ercan/RecommendAppPushNotification/platforms/android/ant-build/classes/com/plugin/gcm/PushPlugin.class \
+/home/ercan/RecommendAppPushNotification/platforms/android/ant-build/classes/com/plugin/gcm/PushHandlerActivity.class \
+/home/ercan/RecommendAppPushNotification/platforms/android/ant-build/classes/com/plugin/gcm/CordovaGCMBroadcastReceiver.class \
+/home/ercan/RecommendAppPushNotification/platforms/android/ant-build/classes/com/plugin/gcm/GCMIntentService.class \
+/home/ercan/RecommendAppPushNotification/platforms/android/ant-build/classes/com/example/recommendAppPushNotification/R$string.class \
+/home/ercan/RecommendAppPushNotification/platforms/android/ant-build/classes/com/example/recommendAppPushNotification/Manifest$permission.class \
+/home/ercan/RecommendAppPushNotification/platforms/android/ant-build/classes/com/example/recommendAppPushNotification/Manifest.class \
+/home/ercan/RecommendAppPushNotification/platforms/android/ant-build/classes/com/example/recommendAppPushNotification/RecommendAppPushNotification.class \
+/home/ercan/RecommendAppPushNotification/platforms/android/ant-build/classes/com/example/recommendAppPushNotification/BuildConfig.class \
+/home/ercan/RecommendAppPushNotification/platforms/android/ant-build/classes/com/example/recommendAppPushNotification/R$attr.class \
+/home/ercan/RecommendAppPushNotification/platforms/android/ant-build/classes/com/example/recommendAppPushNotification/R.class \
+/home/ercan/RecommendAppPushNotification/platforms/android/ant-build/classes/com/example/recommendAppPushNotification/R$drawable.class \
+/home/ercan/RecommendAppPushNotification/platforms/android/ant-build/classes/com/example/recommendAppPushNotification/R$xml.class \
+/home/ercan/RecommendAppPushNotification/platforms/android/ant-build/dexedLibs/classes-7c27deb7756cb15624681ca7cab03005.jar \
+/home/ercan/RecommendAppPushNotification/platforms/android/ant-build/dexedLibs/gcm-b5a29b4480b21eefaef87cd9f76fe0c4.jar \
+/home/ercan/RecommendAppPushNotification/platforms/android/ant-build/dexedLibs/android-support-v13-02247dd8b6132a34c85ccb2f71fb688d.jar \
