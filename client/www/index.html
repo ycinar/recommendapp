@@ -95,9 +95,7 @@
             <h3 id="incomingRecommendRequest">Received recommend requests:</h3>
 
             <div id="receivedRequests">
-                <ul data-role="listview">
-                    <!-- Requests added here -->
-                </ul>
+                
             </div>
 
         </div>
@@ -139,7 +137,7 @@
 			
 			<div data-role="fieldcontain" id="contactsList">
 				<p>Contacts	  PhoneNumber     OnApp</p>
-				<a data-role="button" onclick="sendRequest()">Send Request</a>
+				<a data-role="button" onclick="sendOrForwardRequest()">Send Request or Forward Message</a>
 			</div>
 			
 		</div>
@@ -155,10 +153,11 @@
 				
 				<label for="nameInput">Name:</label>
 				<input type="text" id="nameInput" value="">
+				
 						
 				<!-- AddContacts button, changes the current page as contactsPage and connects to the server.-->
 				<div style="position: absolute; left: 50%;">	<!-- at the center of the screen -->
-					<a href="#homePage" data-role="button" data-inline="true" onclick="saveAndConnect()">Save</a>
+					<a href="" data-role="button" data-inline="true" onclick="saveAndConnect()">Save</a>
 	    		</div>
 			</div>
 
@@ -319,6 +318,7 @@
 				/* connect to the server with given phone number and name. */
 				console.log("Calling server connect function.");
 				socket.emit('connectToServer', phoneNumber, '42', name/*, pushNotificaionId, devicePlatform*/);
+				$.mobile.pageContainer.pagecontainer("change", "#homePage", {transition: "none"});
 				loadContacts();
 			}
 			
@@ -326,7 +326,6 @@
 			var where;
 			var description;
 			var receivers;
-			var requestCounter = 0;
 			var recommendPageFilled = false;
 			var sentRecommendRequests = [];
 			var database;
@@ -334,17 +333,19 @@
 			 * With the given -in the form, what, where, description, receivers values, sends a recommend request to the server,
 			 * and displays a request successfully has been sent message.
 			 */
-			function sendRequest() {				
+			function sendOrForwardRequest() {				
 				
-				if (!recommendPageFilled) {
-					alert("Please fill the request form in the Home Page tab.");
-                    return;
+				if (forwardingRequest) {
+					console.log("Forwarding the request.");
+				} else {
+					console.log("Sending the request.");
+					if (!recommendPageFilled) {
+						alert("Please fill the request form in the Home Page tab.");
+	                    return;
+					}
 				}
-				recommendPageFilled = false;
 				
 				var receivers = [];
-				
-				console.log("Sending request.");
 				
 				for (var checkboxIndex = 0; checkboxIndex < contactCount; checkboxIndex++) {
 					var checkbox = document.getElementById("checkbox" + checkboxIndex);
@@ -355,18 +356,36 @@
 					}
 				}
 				if (receivers.length == 0) {
-					alert("You need to specify at least one person to send the request.");
+					alert("You need to specify at least one person to send or forward the request.");
 					return;
 				}
   				console.log("Receivers: ");
   				console.log(receivers);
 				
-				// send request to the server.
-				socket.emit('sendRecommendRequest', receivers, what, where, description);
+				// send request or forward to the server.
+				/* if a reuqest is forwarded, get the request from database, and forward to the given list. */
+				if (forwardingRequest) {
+					database.transaction(function (tx) {
+                    	tx.executeSql("SELECT * FROM RECOMMENDREQUEST WHERE ID=" + requestId , [], function (tx, results) {
+	                        var request = results.rows.item(0);
+	                        console.log("Request:" + JSON.stringify(request));
+	                        //socket.emit("forwardRecommendRequest", request, receivers);
+	                        alert("Recommendation request forwarded to chosen contacts.");
+	                        forwardingRequest = false;
+                    	});
+                	}, sqlOnError_GetRequestWithId /* function called on error */, function () {console.log("Finding request with id successful."); });
+				} else {
+					socket.emit('sendRecommendRequest', receivers, what, where, description);
 				
-				alert("Request sent.");
-				//var progressArea = document.getElementById("progressArea");
-				//progressArea.innerHTML = "Request has been sent." + "(" + (++requestCounter) + ")";
+					alert("Request sent.");
+				}
+			}
+			function sqlOnError_GetRequestWithId(err) {
+				console.log("SQL error on finding request with id. Error=" + JSON.stringify(err));
+				alert("SQL error on finding request with id. Error=" + JSON.stringify(err));
+			}
+			function getRequestFromDb(requestId) {
+				
 			}
 		</script>
 		<script>
@@ -511,7 +530,6 @@
                 switch( e.event ) {
                     case 'registered':
                         if ( e.regid.length > 0 ) {
-                        	console.log("Registeration for push notifications successful.");
                             console.log('Registration id = '+ e.regid);
 
                             window.localStorage.setItem("pushNotificationId", e.regid);
@@ -575,6 +593,7 @@
                     //tx.executeSql("INSERT INTO RECOMMENDREQUEST VALUES (1, '2014-19-06 12:00:00', '1234', '1234,2345', 'Library', 'Galway', 'A library near Galway'," + STATUS_SENT + ')');
 
                     //tx.executeSql("INSERT INTO RECOMMENDREQUEST VALUES (2, '2014-20-06 12:22:35', '1234', '1234,2345', 'Plumber', 'Dublin', 'A plumber near Dublin city center'," + STATUS_SENT + ')');
+                    //tx.executeSql("INSERT INTO RECOMMENDREQUEST VALUES (4, '2014-20-06 14:22:35', '1234', '1234,2345', 'Plumber', 'Dublin', 'A plumber near Dublin city center'," + STATUS_RECEIVED + ')');
                     //tx.executeSql("INSERT INTO RECOMMENDREQUEST VALUES (5, '2014-21-06 15:29:35', '2345', '', 'Restaurant', 'Dublin', 'Somewhere cheap'," + STATUS_RECEIVED + ')');
 
                     // insert a test reply into the database.
@@ -928,10 +947,21 @@
                             var requestString = createRequestString(request);
                             addNewReceivedRequestToList(requestString);
                         }
+                        //addOnClickMethodsToRequests();
                     });
                 }, sqlOnError_GetReceivedRequests, function () {console.log("Received recommend request select and page creation successful.");});
+                
             }
-
+            
+            function addOnClickMethodsToRequests() {
+            	console.log("Adding onClick methods for requests.");
+            	for (var i = 0; i < requestCounter; i++) {
+            		$("#requestPopupForward" + i).click(function () {
+						updateRequestIdAndReplyReceiver($("#requestPopup" + i).text());
+						console.log($("#requestPopup" + i).text());
+					});
+            	}
+            }
             function sqlOnError_GetReceivedRequests(err) {
 				alert("SQL error on selecting received recomend requests = " + JSON.stringify(err));
 				console.log("SQL error on selecting received recomend requests = " + JSON.stringify(err));
@@ -940,22 +970,41 @@
             function createRequestString(request) {
                 return request.id + ", " + request.what + ", " + request.area + " From: " + request.sender;
             }
+            
+            var requestCounter = 0;
             function addNewReceivedRequestToList(requestString) {
-                $('#receivedRequests ul').append(
-                        $('<li>').append(
-                                $('<a>').attr('href','#replyPage').append(
-                                        $('<span>').attr('class', 'tab').append(requestString).click(function () {
-                                            console.log("Clicked on the request, redirecting to reply page.");
-                                            updateRequestIdAndReplyReceiver(requestString);
-                                        })
-                                )));
+                // $('#receivedRequests ul').append(
+                        // $('<li>').append(
+                                // $('<a>').attr('href','#replyPage').append(
+                                        // $('<span>').attr('class', 'tab').append(requestString).click(function () {
+                                            // console.log("Clicked on the request, redirecting to reply page.");
+                                            // updateRequestIdAndReplyReceiver(requestString);
+                                        // })
+                                // )));
+                                
+            	$("#receivedRequests").append('<a href="#request' + requestCounter + 'Popup"' + 'data-rel="popup" data-role="button"' + ' id=' + '"requestPopup'  + requestCounter + '"' + ' data-transition="none">Placeholder</a>'
+            	+ '<div data-role="popup" id="request' + requestCounter + 'Popup" >' +
+						'<ul data-role="listview" data-inset="true">' +
+							'<li data-role="divider" data-theme="b">Action</li>' +
+							'<li><a href="#replyPage"' + ' onclick="updateRequestIdAndReplyReceiver(\'' + requestString + '\')"' + '>Reply</a></li>' +
+							'<li><a href="#contactsPage"' + ' onclick="forwardUpdate(\'' + requestString + '\')"' + 'id="requestPopupForward' + requestCounter + '">Forward</a></li>' + 
+						'</ul>' +
+				'</div>');
+				$("#requestPopup" + requestCounter).text(requestString);
+				requestCounter++;
+            }
+            
+            var forwardingRequest = false;
+            function forwardUpdate(requestString) {
+            	updateRequestIdAndReplyReceiver(requestString);
+            	forwardingRequest = true;
             }
             function  updateRequestIdAndReplyReceiver(requestString) {
                 var spaceIndex = requestString.indexOf(",");
                 requestId = parseInt(requestString.substring(0, spaceIndex));
                 var colonIndex = requestString.lastIndexOf(":");
                 replyReceiver = requestString.substring(colonIndex + 2);
-                console.log("Request id: " + requestId + ", Reply receiver: " + replyReceiver);
+                console.log("Request id: " + requestId + ", Receiver: " + replyReceiver);
             }
 			// for pc, just call init(). for mobile phones, instead of calling init, call phonegap's function document.addEventListener(...);
 			//init();
