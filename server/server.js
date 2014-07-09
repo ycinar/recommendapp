@@ -63,6 +63,11 @@ var onlineUsers = [];
 var undeliveredRequests = [];
 var undeliveredReplies = [];
 
+// socket io after 1.0
+// var socket = require('socket.io');
+// var io = socket({port: 8080});
+
+// socket.io before 0.9
 var io = require('socket.io').listen(8080);
 
 io.sockets.on('connection', function (socket) {
@@ -210,25 +215,30 @@ io.sockets.on('connection', function (socket) {
 	 * @where: recommend is requested in the "where" area.
 	 * @description: a brief description of the recommend request. 
 	 */
-	socket.on('sendRecommendRequest', function (receivers, what, where, description) {
+	socket.on('sendRecommendRequest', function (receivers, what, where, description, forwardedRequestInfo) {
 		if (!_connectionAccepted) {	// invalid connection, disconnect.
 			socket.disconnect();
 			return;
 		} else {	// we have a valid connection.
 			var now = (new Date()).toISOString().substring(0,19).replace('T', ' ');
-			var recommendRequest = new RecommendRequest({id: parseInt(recommendRequestCounter.value), date: now, from: _phoneNumber, to: receivers, what: what, where: where, desc: description});
+			var recommendRequest;
+			if (forwardedRequestInfo == null) {	// a normal request
+				recommendRequest = new RecommendRequest({id: parseInt(recommendRequestCounter.value), date: now, from: _phoneNumber, to: receivers, what: what, where: where, desc: description});
 		
-			console.log('Coming recommend request: ' + recommendRequest);
+				console.log('Coming recommend request: ' + recommendRequest);
 
-			/* first, save the request in the db. */
-			recommendRequest.save(function (err) {
-				if (err) {	// if any error occures.
-					return console.error(err);
-				}
-				console.log('DB: New recommend request ' + recommendRequest + ' saved.');
-				/* save the recommend request also on the phone. need to use the id, so do it now. */
-				socket.emit('saveSentRecommendRequest', recommendRequest);
-			});
+				/* first, save the request in the db. */
+				recommendRequest.save(function (err) {
+					if (err) {	// if any error occures.
+						return console.error(err);
+					}
+					console.log('DB: New recommend request ' + recommendRequest + ' saved.');
+					/* save the recommend request also on the phone. need to use the id, so do it now. */
+					socket.emit('saveSentRecommendRequest', recommendRequest);
+				});
+			} else {	// a forwarded request. use the same recommendation request format with a normal request.
+				recommendRequest = {id: forwardedRequestInfo.id, date: forwardedRequestInfo.sentDate, from: forwardedRequestInfo.sender, to: receivers, what: what, where: where, desc: description};
+			}
 
 			/*  send request to all receivers: if they are online, send now; else, add to the undelivered request array */
 			var undeliveredRequestReceivers = [];
@@ -241,6 +251,15 @@ io.sockets.on('connection', function (socket) {
 
 					// send request to the specific user which is identified by its socket id in the server.
 					io.sockets.socket(receiverSocketId).emit('getRecommendRequest', recommendRequest);
+					if (forwardedRequestInfo != null) {
+						var userToNotifyIndex = findUserIndex(recommendRequest.from);
+						if (userToNotifyIndex != -1) {	// user is online now. notify that his request has been forwarded to another person.
+							io.sockets.socket(onlineUsers[userToNotifyIndex].socketId).emit('notifiedOfForwardedRequest', receivers[i]);
+						} else {
+							console.log("Notify owner is not online.");
+							// @TODO: store notifications deliver later.
+						}
+					}
 
 				} else {	// user is not online.
 					undeliveredRequestReceivers.push(receivers[i]);
@@ -248,7 +267,11 @@ io.sockets.on('connection', function (socket) {
 			}
 			if (undeliveredRequestReceivers.length !== 0) {	// some of the users are not online, some messages couldn't be delivered.
 				console.log('Receivers ' + undeliveredRequestReceivers + ' are not online for request ' + recommendRequest);
-				undeliveredRequests.push({id: parseInt(recommendRequestCounter.value), date: recommendRequest.date, from: _phoneNumber, what: what, where: where, desc: description, receivers: undeliveredRequestReceivers});
+				if (forwardedRequestInfo == null) {	// normal request
+					undeliveredRequests.push({id: parseInt(recommendRequestCounter.value), date: recommendRequest.date, from: _phoneNumber, what: what, where: where, desc: description, receivers: undeliveredRequestReceivers, forwarded: false});
+				} else {	// a forwarded request.
+					undeliveredRequests.push({id: recommendRequest.id, date: recommendRequest.date, from: recommendRequest.from, what: what, where: where, desc: description, receivers: undeliveredRequestReceivers, forwarded: true});
+				}
 				console.log('Undelivered Requests: ');
 				console.log(undeliveredRequests);
 				console.log('Request saved for delivery to not online users');
@@ -256,15 +279,17 @@ io.sockets.on('connection', function (socket) {
 				console.log('All receivers are online, and recommend requests has been sent.');
 			}
 
-			/* increase the counter and save. */
-			recommendRequestCounter.value = (parseInt(recommendRequestCounter.value) + 1) + '';	// increase the counter by 1
+			if (forwardedRequestInfo == null) {	// not a forwarded request, feel free to update the counter.
+				/* increase the counter and save. */
+				recommendRequestCounter.value = (parseInt(recommendRequestCounter.value) + 1) + '';	// increase the counter by 1
 
-			recommendRequestCounter.save(function (err) {
-				if (err) {
-					return console.error(err);
-				}
-				console.log('Request counter updated to: ' + recommendRequestCounter.value);
-			});
+				recommendRequestCounter.save(function (err) {
+					if (err) {
+						return console.error(err);
+					}
+					console.log('Request counter updated to: ' + recommendRequestCounter.value);
+				});
+			}
 		}
 	});
 	/*
@@ -321,11 +346,11 @@ io.sockets.on('connection', function (socket) {
 	});
 
 	/*
-	 * @TODO: Write the function from scratch. User listesinden gelen telefon numalarini kullanarak database'de
-	 * olup olmadiklarina bak user'larin.
-	 * The function used for answering 'Is the user using the recommendApp?' question.
+	 * Creates an array containing the information that which of the user's contacts on app, which are not; and sends this information back
+	 * to the phone.
 	 */
 	socket.on('checkContactsOnApp', function (contactList) {
+		console.log('Checking contacts whether they are on app.');
 		var resultContactList = [];
 		var validPnCounter = 0;
 		for (var contactIndex = 0; contactIndex < contactList.length; contactIndex++) {
@@ -350,8 +375,7 @@ io.sockets.on('connection', function (socket) {
 							console.log('Phone number: ' + phoneNumberWrapped);
 							/* if we have reached to the end of the loop, call client's function to send the result. */
 							if (--validPnCounter == 0) {
-								console.log('DB: Result contact list: ');
-								console.log(resultContactList);
+								console.log('DB: Sending onApp list back.');
 								socket.emit('updateUsersOnApp', resultContactList);
 							}
 						});
@@ -359,7 +383,7 @@ io.sockets.on('connection', function (socket) {
 				}
 			}	
 		}
-	}); 
+	});
 });
 
 /* server end */
