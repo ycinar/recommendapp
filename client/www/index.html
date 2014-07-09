@@ -369,7 +369,7 @@
                     	tx.executeSql("SELECT * FROM RECOMMENDREQUEST WHERE ID=" + requestId , [], function (tx, results) {
 	                        var request = results.rows.item(0);
 	                        console.log("Request:" + JSON.stringify(request));
-	                        //socket.emit("forwardRecommendRequest", request, receivers);
+	                        socket.emit("sendRecommendRequest", receivers, request.what, request.area, request.description, {id: request.id, sentDate: request.sentDate, sender: request.sender});
 	                        alert("Recommendation request forwarded to chosen contacts.");
 	                        forwardingRequest = false;
                     	});
@@ -392,7 +392,7 @@
 			var LOCALHOST_FOR_PC = "http://127.0.0.1:8080";
 			var LOCALHOST_FOR_MOBILE = "http://10.0.2.2:8080";
 			var CURRENT_LOCALHOST = LOCALHOST_FOR_PC;
-			var SERVER = "http://193.140.98.169:8080";
+			var SERVER = "http://193.140.98.169:8080/";
 			var socket;
 			var log = document.getElementById('log');
 		</script>
@@ -723,6 +723,11 @@
 
                     }, sqlOnError_SentReplySave /* function called on error */, function () { console.log("Sent reply saved in the phone's db."); });
                 });
+                
+                socket.on('notifiedOfForwardedRequest', function (receiver) {
+                	console.log("Your message has been forwarded to " + receiver + " by another person.");
+                	alert(console.log("Your message has been forwarded to " + receiver + " by another person."));
+                });
                 /**
                  * Called when user disconnects from the server.
                  */
@@ -807,13 +812,13 @@
              */
             function loadContacts() {
                 // save a test contact.(working)
-                //var newContact = navigator.contacts.create({displayName: "testUser", phoneNumbers: ["5678"]});
+                //var newContact = navigator.contacts.create({displayName: "Hugh", phoneNumbers: ["3456"]});
                 //newContact.save(contactSaveOnSuccess, contactSaveOnError);
                 var options = new ContactFindOptions();
     			options.filter = ""; 
     			options.multiple = true;
     			var filter = ["displayName", "phoneNumbers"];;
-                navigator.contacts.find(filter, contactFindOnSuccess, contactFindOnError, options);
+                navigator.contacts.find(filter, contactFindOnSuccess, contactFindOnError/*, options*/);
             }
 
             function contactSaveOnError(contactError) {
