@@ -134,10 +134,13 @@
 				</div>
 			</div>
 			<!-- NavigationBarHeader end -->
+			<div data-role="fieldcontain" id="groupsList">
+				<a data-role="button" onclick="addGroup()">Add Group</a>
+			</div>
 			
 			<div data-role="fieldcontain" id="contactsList">
-				<p>Contacts	  PhoneNumber     OnApp</p>
 				<a data-role="button" onclick="sendOrForwardRequest()">Send Request or Forward Message</a>
+				<p>Contacts	  PhoneNumber     OnApp</p>
 			</div>
 			
 		</div>
@@ -250,7 +253,71 @@
         <!-- SettingsPage end -->
 
 		<script>
+			var groupButtonClickedSecondClick = false;
+			function addGroup() {
+				if (!groupButtonClickedSecondClick) {
+					groupButtonClickedSecondClick = true;
+					$("#groupsList").append('<label for="groupNameInput" id="groupNameInputLabel">Group Name:</label><input type="text" id="groupNameInput" value=""  />');
+					alert("Please define a name for the group and choose contacts in the group.");
+				} else {
+					var groupName = document.getElementById("groupNameInput").value;
+					console.log("Group name for new group: " + groupName);
+					if (groupName == '') {
+						alert("Group name can't be empty.");
+						return;
+					}
+					var groupMembers = [];
+					for (var checkboxIndex = 0; checkboxIndex < contactCount; checkboxIndex++) {
+						var checkbox = document.getElementById("checkbox" + checkboxIndex);
+						if (checkbox.checked) {
+							var split = checkbox.value.split(",");
+							var memberName = split[0];
+							var memberPhoneNumber = split[1];
+							groupMembers.push({name: memberName, phoneNumber: memberPhoneNumber});
+						}
+					}
+					console.log("New group members: ");
+					console.log(groupMembers);
+					console.log("Saving the group in the phone's db.");
+					saveGroup(groupName, groupMembers);
+					groupButtonClickedSecondClick = false;
+					
+					/* clean the input and label after saving. */
+					$("#groupNameInput").remove();
+					$("#groupNameInputLabel").remove();
+				}
+			}
+			function saveGroup(groupName, groupMembers) {
+				
+				database.transaction(function (tx) {
+					for (var i = 0; i < groupMembers.length; i++) {
+						var member = groupMembers[i];
+						var insertString = createGroupMemberInsertString(member.name, member.phoneNumber, groupName);
+						tx.executeSql(insertString);
+					}
+					
+                }, sqlOnError_ContactSave /* function called on error */, function () { // called on success.
+                		console.log("Group members are successfully saved in the phone's db.");
+                		addGroupCheckBoxToContactsPage(groupName);
+                	});
+			}
+			
+			var groupCount = 0;
+			function addGroupCheckBoxToContactsPage(groupName) {
+				var container = $('#groupsList');
 
+                $('<input />', { type: 'checkbox', id: 'groupCheckbox' + groupCount, value: groupName, class: 'custom' }).appendTo(container);
+                $('<label />', { "for": 'groupCheckbox' + groupCount, text: groupName }).appendTo(container);
+                groupCount++;
+                $('#groupsList').trigger('create');
+			}
+			function sqlOnError_ContactSave(err) {
+				alert("SQL error on inserting contact = " + JSON.stringify(err));
+				console.log("SQL error on inserting contact = " + JSON.stringify(err));
+			}
+			function createGroupMemberInsertString(memberName, memberPhoneNumber, groupName) {
+				return "INSERT INTO CONTACTGROUP VALUES('" + memberPhoneNumber + "', '" + memberName + "', '" + groupName + "')";
+			}
 			function changeUsername() {
                 var newUsername = document.getElementById("newUsernameInput").value;
                 if (newUsername == '') {
@@ -338,10 +405,10 @@
 				if (forwardingRequest) {
 					console.log("Forwarding the request.");
 				} else {
-					console.log("Sending the request.");
 					if (!recommendPageFilled) {
 						alert("Please fill the request form in the Home Page tab.");
 	                    return;
+	                    console.log("Sending the request.");
 					}
 				}
 				
@@ -392,7 +459,7 @@
 			var LOCALHOST_FOR_PC = "http://127.0.0.1:8080";
 			var LOCALHOST_FOR_MOBILE = "http://10.0.2.2:8080";
 			var CURRENT_LOCALHOST = LOCALHOST_FOR_PC;
-			var SERVER = "http://193.140.98.169:8080/";
+			var SERVER = "http://193.140.98.169:8080";
 			var socket;
 			var log = document.getElementById('log');
 		</script>
@@ -417,10 +484,32 @@
 				initializeSwipePageChange();
 				checkFirstTimeLaunch();
 					// contacts are loaded after connecting to the server.
+				loadGroups();
                 loadResponsePage();
                 loadRequestPage();
 	        }
-
+	        
+	        var contacts = [];
+	        
+	        function loadGroups() {
+	        	database.transaction (function (tx) {
+                    tx.executeSql("SELECT DISTINCT groupName FROM CONTACTGROUP ORDER BY groupName ASC", [], function (tx, results) {
+                    	var len = results.rows.length;
+                        for (var i = 0; i < len; i++){
+                            var groupName = results.rows.item(i).groupName;
+                            addGroupCheckBoxToContactsPage(groupName);
+                        }
+                    });
+                    
+                    tx.executeSql("SELECT * FROM CONTACTGROUP", [], function (tx, results) {
+                    	var len = results.rows.length;
+                        for (var i = 0; i < len; i++){
+                            var contact = results.rows.item(i);
+                            contacts.push(contact);
+                        }
+                    });
+                }, sqlOnError_GetReceivedReplies, function () {console.log("Group select statement, contact update and page creation successful.");});
+	        }
 	        function initializeSwipePageChange() {
 	        	$(document).ready(function() {
                     // var activePage = $.mobile.activePage[0].id;
@@ -586,7 +675,10 @@
 					
 					// create reply table if not exists
 					tx.executeSql("CREATE TABLE IF NOT EXISTS REPLY(requestId INTEGER, sentDate DATE, sender VARCHAR(30), reply VARCHAR(140), status BOOLEAN, PRIMARY KEY (requestId, sentDate))");
-
+					
+					// create group table, contacts are added in the table. groupless contacts are also added in this table(groupName = '').
+					tx.executeSql("CREATE TABLE IF NOT EXISTS CONTACTGROUP(phoneNumber VARCHAR(30), name VARCHAR(40), groupName VARCHAR(30), PRIMARY KEY (phoneNumber, groupName))");
+					
                     // add a test recommend request into the database.
                     //tx.executeSql("INSERT INTO RECOMMENDREQUEST VALUES (0, '2014-17-06 11:00:00', '1234', '1234,2345', 'Supermarket', 'Galway', 'A supermarket near Galway'," + STATUS_SENT + ')');
 
@@ -684,17 +776,21 @@
 
                 socket.on('updateUsersOnApp', function (contacts) {
                 	console.log("Checking contacts process successful. Updating contact list.");
-                    contactCount = contacts.length;
-                    for (var i = 0; i < contacts.length; i++) {
+                    var i;
+                    for (i = 0; i < contacts.length; i++) {
                         // var checkBoxId = '"checkBox' + i + '"';
                         var contact = contacts[i];
                         var onApp = contact.onApp ? 'Yes' : 'No';
-                        var userData = contact.displayName + ',' + contact.phoneNumber + ', ' + onApp;
+                        var userData = contact.displayName + ',' + contact.phoneNumber + ',' + onApp;
 //
                         // $("#contactsList").append('<input type="checkbox" id=' + checkBoxId + ' class="custom" />');
                         // $("#contactsCheckList").append('<label for=' + checkBoxId + '>' + userData + '</label>');
-                        addCheckboxToContactsPage(userData, i);
+                        if (contact.onApp) {
+                        	addContactCheckboxToContactsPage(userData, contactCount);
+                        	contactCount++;
+                        }
                     }
+                    console.log("Contact list updated.");
                 });
 
                 socket.on('saveSentRecommendRequest', function (recommendRequest) {
@@ -818,7 +914,7 @@
     			options.filter = ""; 
     			options.multiple = true;
     			var filter = ["displayName", "phoneNumbers"];;
-                navigator.contacts.find(filter, contactFindOnSuccess, contactFindOnError/*, options*/);
+                navigator.contacts.find(filter, contactFindOnSuccess, contactFindOnError, options);
             }
 
             function contactSaveOnError(contactError) {
@@ -847,11 +943,11 @@
                 alert('Error: ' + contactError);
             }
 
-            function addCheckboxToContactsPage(name, id) {
+            function addContactCheckboxToContactsPage(name, id) {
                 var container = $('#contactsList');
 
                 $('<input />', { type: 'checkbox', id: 'checkbox'+id, value: name, class: 'custom' }).appendTo(container);
-                $('<label />', { for: 'checkbox'+id, text: name }).appendTo(container);
+                $('<label />', { "for": 'checkbox'+id, text: name }).appendTo(container);
             }
 
             function loadResponsePage() {
