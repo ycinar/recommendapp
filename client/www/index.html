@@ -135,12 +135,14 @@
 			</div>
 			<!-- NavigationBarHeader end -->
 			<div data-role="fieldcontain" id="groupsList">
-				<a data-role="button" onclick="addGroup()">Add Group</a>
+				<a data-role="button" data-inline = "true" onclick="addGroup()">Add Group</a>
+				<a data-role="button" data-inline = "true" onclick="changeGroupMembers()">Change Group Members</a>
 			</div>
 			
 			<div data-role="fieldcontain" id="contactsList">
 				<a data-role="button" onclick="sendOrForwardRequest()">Send Request or Forward Message</a>
 				<p>Contacts	  PhoneNumber     OnApp</p>
+				<a data-role="button" onclick="uncheckAll()">Uncheck all</a>
 			</div>
 			
 		</div>
@@ -253,6 +255,85 @@
         <!-- SettingsPage end -->
 
 		<script>
+			function uncheckAll() {
+				for (var i = 0; i < contactCount; i++) {
+					$("#checkbox" + i).prop("checked", false).checkboxradio("refresh");
+				}
+			}
+			var changeGroupMembersClickedSecondClick = false;
+			function changeGroupMembers() {
+				if (!changeGroupMembersClickedSecondClick) {
+					changeGroupMembersClickedSecondClick = true;
+					alert("Please choose just one group and choose members, then click again.");
+				} else {
+					var groupName = '';
+					var checkedCount = 0;
+					for (var i = 0; i < groupCount; i++) {
+						var groupCheckbox = document.getElementById("groupCheckbox" + i);
+						if (groupCheckbox.checked == true) {
+							checkedCount++;
+							groupName = groupCheckbox.value;
+						}
+					}
+					if (checkedCount != 1) {
+						alert("Choose just one group, and try again");
+						return;
+					}
+					var newGroupMembers = [];
+					for (var checkboxIndex = 0; checkboxIndex < contactCount; checkboxIndex++) {
+						var checkbox = document.getElementById("checkbox" + checkboxIndex);
+						if (checkbox.checked) {
+							var split = checkbox.value.split(",");
+							var memberName = split[0];
+							var memberPhoneNumber = split[1];
+							newGroupMembers.push({name: memberName, phoneNumber: memberPhoneNumber, groupName: groupName});
+						}
+					}
+					changeGroupMembersClickedSecondClick = false;
+					console.log("Changing group members of the group: " + groupName + "." + "New members: " + JSON.stringify(newGroupMembers));
+					console.log("Deleting old members.");
+					deleteGroupMembers(groupName);
+					if (newGroupMembers.length == 0) {
+						alert("Deleting the group.");
+						for (var i = 0; i < groupCount; i++) {
+							var checkbox = document.getElementById("groupCheckbox" + i);
+							console.log(checkbox);
+							if (checkbox.value == groupName) {
+								console.log("Found the group.");
+								$("#groupCheckbox" + i).remove();
+								$("#groupCheckbox" + i + "Label").remove();
+								console.log("Group deleted.");
+								return;
+							}
+						}
+					}
+					console.log("Saving the group in the phone's db.");
+					saveGroup(groupName, newGroupMembers);
+					console.log("Saving the group in the phone.");
+					for (var i = 0; i < newGroupMembers.length; i++) {
+						contactGroupPairs.push(newGroupMembers[i]);
+					}
+					console.log("Contacts:" + JSON.stringify(contactGroupPairs));
+					console.log("Saving the group in the phone successful.");
+					alert("New group members saved.");
+				}
+			}
+			function deleteGroupMembers(groupName) {
+				database.transaction(function (tx) {
+					tx.executeSql("DELETE FROM CONTACTGROUP WHERE groupName='" + groupName + "'");
+				}, sqlOnError_DeleteMembers, function () {console.log("Deleting old group members from phone's db successful.");});
+				
+				for (var i = 0; i < contactGroupPairs.length; i++) {
+					if (contactGroupPairs[i].groupName == groupName) {
+						contactGroupPairs.splice(i--, 1);
+					}
+				}
+				console.log("Deleting old group members from phone successful.");
+			}
+			function sqlOnError_DeleteMembers(err) {
+				console.log("SQL error on deleting group members. Error = " + JSON.stringify(err));
+				alert("SQL error on deleting group members. Error = " + JSON.stringify(err));
+			}
 			var groupButtonClickedSecondClick = false;
 			function addGroup() {
 				if (!groupButtonClickedSecondClick) {
@@ -276,10 +357,14 @@
 							groupMembers.push({name: memberName, phoneNumber: memberPhoneNumber});
 						}
 					}
-					console.log("New group members: ");
-					console.log(groupMembers);
+					console.log("New group members: " + JSON.stringify(groupMembers));
 					console.log("Saving the group in the phone's db.");
 					saveGroup(groupName, groupMembers);
+					for (var i = 0; i < groupMembers.length; i++) {
+						var member = groupMembers[i];
+						contactGroupPairs.push({name: member.name, phoneNumber: member.phoneNumber, groupName: groupName});
+					}
+					addGroupCheckBoxToContactsPage(groupName);
 					groupButtonClickedSecondClick = false;
 					
 					/* clean the input and label after saving. */
@@ -298,18 +383,50 @@
 					
                 }, sqlOnError_ContactSave /* function called on error */, function () { // called on success.
                 		console.log("Group members are successfully saved in the phone's db.");
-                		addGroupCheckBoxToContactsPage(groupName);
                 	});
 			}
 			
 			var groupCount = 0;
 			function addGroupCheckBoxToContactsPage(groupName) {
 				var container = $('#groupsList');
-
-                $('<input />', { type: 'checkbox', id: 'groupCheckbox' + groupCount, value: groupName, class: 'custom' }).appendTo(container);
-                $('<label />', { "for": 'groupCheckbox' + groupCount, text: groupName }).appendTo(container);
+                $('<input />', { type: 'checkbox', id: 'groupCheckbox' + groupCount, value: groupName, class: 'custom', onchange: 'showMembers(' + '"groupCheckbox' + groupCount + '")'}).appendTo(container);
+                $('<label />', { "for": 'groupCheckbox' + groupCount, id: 'groupCheckbox' + groupCount + 'Label', text: groupName }).appendTo(container);
                 groupCount++;
                 $('#groupsList').trigger('create');
+			}
+			
+			function showMembers(groupCheckboxName) {
+				var checkbox = document.getElementById(groupCheckboxName);
+				var groupName = checkbox.value;
+				console.log("Clicked group name: " + groupName);
+				if (checkbox.checked) {
+					console.log("Showing members.");
+					groupMembers(groupName, "show");
+				} else {
+					console.log("Hiding members.");
+					groupMembers(groupName, "hide");
+				}
+			}
+			function groupMembers(groupName, action) {
+				for (var i = 0; i < contactGroupPairs.length; i++) {
+					if (contactGroupPairs[i].groupName == groupName) {
+						for (var j = 0; j < contactCount; j++) {
+							var contactCheckbox = document.getElementById("checkbox" + j);
+							if (contactGroupPairs[i].phoneNumber == contactCheckbox.value.split(",")[1]) {
+								console.log("Found a group member. Phone number: " + contactGroupPairs[i].phoneNumber);
+								if (action == "show") {
+									console.log("Showing.");
+									$('#checkbox' + j).prop("checked",true).checkboxradio("refresh");	// after a few times trying, the working solution.
+								} else if (action == "hide") {
+									console.log("Hiding.");
+									$('#checkbox' + j).prop("checked",false).checkboxradio("refresh");
+								}
+								break;
+							}
+						}
+					}
+				}
+				
 			}
 			function sqlOnError_ContactSave(err) {
 				alert("SQL error on inserting contact = " + JSON.stringify(err));
@@ -459,7 +576,8 @@
 			var LOCALHOST_FOR_PC = "http://127.0.0.1:8080";
 			var LOCALHOST_FOR_MOBILE = "http://10.0.2.2:8080";
 			var CURRENT_LOCALHOST = LOCALHOST_FOR_PC;
-			var SERVER = "http://193.140.98.169:8080";
+			var server = "http://193.140.98.169:8080";
+			var SERVER = server;
 			var socket;
 			var log = document.getElementById('log');
 		</script>
@@ -489,7 +607,7 @@
                 loadRequestPage();
 	        }
 	        
-	        var contacts = [];
+	        var contactGroupPairs = [];
 	        
 	        function loadGroups() {
 	        	database.transaction (function (tx) {
@@ -500,12 +618,11 @@
                             addGroupCheckBoxToContactsPage(groupName);
                         }
                     });
-                    
                     tx.executeSql("SELECT * FROM CONTACTGROUP", [], function (tx, results) {
                     	var len = results.rows.length;
                         for (var i = 0; i < len; i++){
                             var contact = results.rows.item(i);
-                            contacts.push(contact);
+                            contactGroupPairs.push(contact);
                         }
                     });
                 }, sqlOnError_GetReceivedReplies, function () {console.log("Group select statement, contact update and page creation successful.");});
@@ -660,7 +777,6 @@
             var STATUS_SENT = 0;
             var STATUS_RECEIVED = 1;
 
-			// @TODO: Also add contacts table.
 			function openDatabaseConnection() {
 				/* open database "phone", which has 1 mb storage */
 				database = window.openDatabase("test","1.0", "Test DB", 1000000);
@@ -927,7 +1043,7 @@
             }
 
             /*
-             * @TODO: send all contacts to the server, and get the results back if they are using the app, and update in the page.
+             * 
              * Called if contacts found.
              */
             function contactFindOnSuccess(contact) {
@@ -948,6 +1064,7 @@
 
                 $('<input />', { type: 'checkbox', id: 'checkbox'+id, value: name, class: 'custom' }).appendTo(container);
                 $('<label />', { "for": 'checkbox'+id, text: name }).appendTo(container);
+                $('checkbox'+id).trigger("create");
             }
 
             function loadResponsePage() {
