@@ -1173,7 +1173,7 @@
                         for (var i = 0; i < len; i++) {
                             var request = results.rows.item(i);
                             var requestString = createRequestString(request);
-                            addNewReceivedRequestToList(requestString);
+                            addNewReceivedRequestToList(requestString, request.description);
                         }
                         //addOnClickMethodsToRequests();
                     });
@@ -1181,22 +1181,22 @@
                 
             }
             
-            function addOnClickMethodsToRequests() {
-            	console.log("Adding onClick methods for requests.");
-            	for (var i = 0; i < requestCounter; i++) {
-            		$("#requestPopupForward" + i).click(function () {
-						updateRequestIdAndReplyReceiver($("#requestPopup" + i).text());
-						console.log($("#requestPopup" + i).text());
-					});
-            	}
-            }
+            // function addOnClickMethodsToRequests() {
+            	// console.log("Adding onClick methods for requests.");
+            	// for (var i = 0; i < requestCounter; i++) {
+            		// $("#requestPopupForward" + i).click(function () {
+						// updateRequestIdAndReplyReceiver($("#requestPopup" + i).text());
+						// console.log($("#requestPopup" + i).text());
+					// });
+            	// }
+            // }
 
             function createRequestString(request) {
                 return request.id + ", " + request.what + ", " + request.area + " From: " + request.sender;
             }
             
             var requestCounter = 0;
-            function addNewReceivedRequestToList(requestString) {
+            function addNewReceivedRequestToList(requestString, requestDescription) {
                 // $('#receivedRequests ul').append(
                         // $('<li>').append(
                                 // $('<a>').attr('href','#replyPage').append(
@@ -1206,15 +1206,25 @@
                                         // })
                                 // )));
                                 
-            	$("#receivedRequests").append('<a href="#request' + requestCounter + 'Popup"' + 'data-rel="popup" data-role="button"' + ' id=' + '"requestPopup'  + requestCounter + '"' + ' data-transition="none">Placeholder</a>'
-            	+ '<div data-role="popup" id="request' + requestCounter + 'Popup" >' +
-						'<ul data-role="listview" data-inset="true">' +
-							'<li data-role="divider" data-theme="b">Action</li>' +
-							'<li><a href="#replyPage"' + ' onclick="updateRequestIdAndReplyReceiver(\'' + requestString + '\')"' + '>Reply</a></li>' +
-							'<li><a href="#contactsPage"' + ' onclick="forwardUpdate(\'' + requestString + '\')"' + 'id="requestPopupForward' + requestCounter + '">Forward</a></li>' + 
-						'</ul>' +
-				'</div>');
-				$("#requestPopup" + requestCounter).text(requestString);
+                // /* append a popup menu containing reply and forward choises. */
+            	// $("#receivedRequests").append('<a href="#request' + requestCounter + 'Popup"' + 'data-rel="popup" data-role="button"' + ' id=' + '"requestPopup'  + requestCounter + '"' + ' data-transition="none">Placeholder</a>'
+            	// + '<div data-role="popup" id="request' + requestCounter + 'Popup" >' +
+						// '<ul data-role="listview" data-inset="true">' +
+							// '<li data-role="divider" data-theme="b">Action</li>' +
+							// '<li><a href="#replyPage"' + ' onclick="updateRequestIdAndReplyReceiver(\'' + requestString + '\')"' + '>Reply</a></li>' +
+							// '<li><a href="#contactsPage"' + ' onclick="forwardUpdate(\'' + requestString + '\')"' + 'id="requestPopupForward' + requestCounter + '">Forward</a></li>' + 
+						// '</ul>' +
+				// '</div>');
+				// $("#requestPopup" + requestCounter).text(requestString);
+				// requestCounter++;
+				
+				/* append collapsible containing the description of the request */
+				$("#receivedRequests").append('<div data-role="collapsible"' + ' id=' + '"requestCollapsible'  + requestCounter + '">' + 
+											'<h3>' + requestString + '</h3>' + 
+											'<p>' + requestDescription + '</p>' +
+											'<a href="#replyPage" data-role="button" id="request' + requestCounter + 'ReplyButton"' + ' data-inline="true"' + ' onclick="updateRequestIdAndReplyReceiver(\'' + requestString + '\')"' + '>Reply</a>' +
+											'<a href="#contactsPage" data-role="button" id="request' + requestCounter + 'ForwardButton"' + ' data-inline="true"' + ' onclick="forwardUpdate(\'' + requestString + '\')">Forward</a>' + 
+											'</div>');
 				requestCounter++;
             }
             
