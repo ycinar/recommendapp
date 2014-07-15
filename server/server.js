@@ -42,6 +42,12 @@ var KeyValue = models.KeyValueModel;
 /* get the recommendRequestCounter from db. It is used for giving ids to the requests. */
 var recommendRequestCounter;
 
+
+/* use gcm for android push notifications */
+var gcm = require('node-gcm');
+var sender = new gcm.Sender('AIzaSyChghAWBJhseeOPi3YfgymfgLsapvP3Jvo');
+
+
 KeyValue.findOne({key: 'recommendRequestCounter'}, function (err, variable) {
 	if (err) {
 		return console.error(err);
@@ -58,6 +64,40 @@ KeyValue.findOne({key: 'recommendRequestCounter'}, function (err, variable) {
 	}
 });
 
+/*
+ * Sends push notification message to the device by using gcm or apns.
+ */
+function sendPushNotifications(receivers, message) {
+	console.log("Push notification receivers:");
+	console.log(receivers);
+	for (var i = 0; i < receivers.length; i++) {
+		var receiver = receivers[i];
+		User.findOne({phoneNumber: receiver}, function (err, user) {
+			if (err) {
+				console.error(err);
+				return;
+			}
+			if (user.pushNotificationId != '') {	// we have a valid push notification 
+				if (user.devicePlatform == "android") {
+					sender.send(message, [user.pushNotificationId], 1, function (err, result) {
+						if (err) {
+							console.log("Push notification error: ");
+							console.log(err);
+							return;
+						}
+						console.log('Push notification result for ' + user.phoneNumber + ':');
+	    				console.log(result);
+					});
+				} else {	// and ios device.
+					// @TODO: add support for apns, add certification files...
+				}
+				console.log("Push notifications has been sent to the devices.");
+			} else {	// user doesn't have a push notification id.
+				console.log("User doesn't have a valid push notification id.");
+			}		
+		});
+	}
+}
 
 var onlineUsers = [];
 var undeliveredRequests = [];
@@ -83,7 +123,7 @@ io.sockets.on('connection', function (socket) {
 	 * @password: for blocking unintended connections, should be synced with server's password
 	 * @name: the username which user chooses, shown in the app.
 	 */
-	socket.on('connectToServer', function (phoneNumber, password, name) {
+	socket.on('connectToServer', function (phoneNumber, password, name, devicePlatform, pushNotificationId) {
 
 		if (!password) {	// no password, no connection.
 			console.log('Connection refused. Reason: no password.');
@@ -106,7 +146,7 @@ io.sockets.on('connection', function (socket) {
 		// we have a valid connection.
 		_connectionAccepted = true;
 		
-		var connectedUser = new User({phoneNumber: phoneNumber, name: name});
+		var connectedUser = new User({phoneNumber: phoneNumber, name: name, devicePlatform: devicePlatform, pushNotificationId: pushNotificationId});
 
 		// add connected user to the online users array with its socketId.
 		onlineUsers.push({user: connectedUser, socketId: socket.id});
@@ -125,7 +165,7 @@ io.sockets.on('connection', function (socket) {
 		console.log('_name udpated to ' + name);
 
 		// check if the connected user was in the database.
-		User.findOne({phoneNumber: phoneNumber}, function(err, user) {
+		User.findOne({phoneNumber: phoneNumber}, function (err, user) {
 			if (err) {
 				console.error(err);
 				return;
@@ -265,6 +305,17 @@ io.sockets.on('connection', function (socket) {
 					undeliveredRequestReceivers.push(receivers[i]);
 				}
 			}
+
+			/* prepare message for gcm */
+			var message = new gcm.Message();
+			message.addData('title', 'New recommendation request!');
+			message.addData('message','Sender: ' + recommendRequest.from, 'Topic: ' + what + ", " + where);
+			message.timeToLive = 3600 * 24; // Duration in seconds to hold in GCM and retry before timing out. Default 4 weeks (2,419,200 seconds) if not specified.
+
+			/* Sending push notifications to receivers who are not online. */
+			console.log("Sending push notifications.");
+			sendPushNotifications(undeliveredRequestReceivers, message);
+
 			if (undeliveredRequestReceivers.length !== 0) {	// some of the users are not online, some messages couldn't be delivered.
 				console.log('Receivers ' + undeliveredRequestReceivers + ' are not online for request ' + recommendRequest);
 				if (forwardedRequestInfo == null) {	// normal request
@@ -338,6 +389,15 @@ io.sockets.on('connection', function (socket) {
 			} else {
 				console.log('Reply receiver is not online.');
 
+				/* prepare message for gcm. */
+				var message = new gcm.Message();
+				message.addData('title', 'New reply!');
+				message.addData('message','Sender: ' + _phoneNumber + ' Reply: ' + reply);
+				message.timeToLive = 3000;
+
+				/* send message as push notification. */
+				sendPushNotifications([replyReceiver], message);
+
 				// store the reply for delivery. The reply will be delivered when the user connects.
 				undeliveredReplies.push(reply);
 				console.log('Reply saved for delivery.');
@@ -383,6 +443,25 @@ io.sockets.on('connection', function (socket) {
 				}
 			}	
 		}
+	});
+	
+	/*	
+	* Finds the user in the database, and saves the new push notification id for user.
+	*/
+	socket.on ('updatePushNotificationId', function (id) {
+		User.findOne({phoneNumber: _phoneNumber}, function (err, user) {
+			if (err) {
+				console.error(err);
+				return;
+			}
+			user.pushNotificationId = id;
+			user.save(function (err) {	// save the updated user.
+				if (err) {
+					return console.error(err);
+				}
+				console.log('DB: Push notification id updated. New id for ' + _phoneNumber + ': ' + id);
+			});
+		});
 	});
 });
 

@@ -25,7 +25,7 @@
 		<!-- HomePage start -->
 		<div data-role="page" id="homePage" data-dom-cache="true">
 			<!-- NavigationBarHeader start -->
-			<div data-role="header" data-position="fixed" id="navbar">
+			<div data-role="header" id="navbar">
 				<div data-role="navbar" data-iconpos="bottom">
 					<ul>
 						<li><a href="#homePage" data-icon="home" class="ui-btn-active ui-state-persist">Home</a></li>
@@ -79,7 +79,7 @@
 		<div data-role="page" id="requestsPage" data-dom-cache="true">
 			
 			<!-- NavigationBarHeader start -->
-			<div data-role="header" data-position="fixed" id="navbar">
+			<div data-role="header" id="navbar">
 				<div data-role="navbar" data-iconpos="bottom">
 					<ul>
 						<li><a href="#homePage" data-icon="home">Home</a></li>
@@ -122,7 +122,7 @@
 		<div data-role="page" id="contactsPage" data-dom-cache="true">
 			
 			<!-- NavigationBarHeader start -->
-			<div data-role="header" data-position="fixed" id="navbar">
+			<div data-role="header" id="navbar">
 				<div data-role="navbar" data-iconpos="bottom">
 					<ul>
 						<li><a href="#homePage" data-icon="home">Home</a></li>
@@ -175,7 +175,7 @@
 		<div data-role="page" id="responsesPage" data-dom-cache="true">
 			
 			<!-- NavigationBarHeader start -->
-			<div data-role="header" data-position="fixed" id="navbar">
+			<div data-role="header" id="navbar">
 				<div data-role="navbar" data-iconpos="bottom">
 					<ul>
 						<li><a href="#homePage" data-icon="home">Home</a></li>
@@ -202,7 +202,7 @@
         <div data-role="page" id="settingsPage" data-dom-cache="true">
 
         	<!-- NavigationBarHeader start -->
-			<div data-role="header" data-position="fixed" id="navbar">
+			<div data-role="header" id="navbar">
 				<div data-role="navbar" data-iconpos="bottom">
 					<ul>
 						<li><a href="#homePage" data-icon="home">Home</a></li>
@@ -548,7 +548,8 @@
 				
 				/* connect to the server with given phone number and name. */
 				console.log("Calling server connect function.");
-				socket.emit('connectToServer', phoneNumber, '42', name/*, pushNotificaionId, devicePlatform*/);
+				socket.emit("connectToServer", phoneNumber, 42, name, devicePlatform, pushNotificationId);
+				loadContacts();
 				$.mobile.pageContainer.pagecontainer("change", "#homePage", {transition: "none"});
 			}
 			
@@ -641,7 +642,6 @@
 				registerForPushNotifications();
 				initializeSwipePageChange();
 				checkFirstTimeLaunch();
-				loadContacts();
 				loadGroups();
                 loadResponsePage();
                 loadRequestPage();
@@ -709,8 +709,8 @@
 
                 });
 	        }
-	        var devicePlatform;
-	        var pushNotificationId;
+	        var devicePlatform = '';
+	        var pushNotificationId = '';
 
 	        function registerForPushNotifications() {
 
@@ -761,8 +761,10 @@
             function registerTokenHandler(result) {
             	console.log("Registeration for push notifications successful.");
             	console.log('Registration id = '+ result);
+            	pushNotificationId = result;
             	window.localStorage.setItem("pushNotificationId", result);
             	console.log("Registeration id for push notifications saved in the device.");
+            	socket.emit('updatePushNotificationId', result);
             }
 
             function registerErrorHandler(error) {
@@ -777,9 +779,11 @@
                     case 'registered':
                         if ( e.regid.length > 0 ) {
                             console.log('Registration id = '+ e.regid);
-
+                            pushNotificationId = e.regid;
                             window.localStorage.setItem("pushNotificationId", e.regid);
                             console.log("Registeration id for push notifications saved in the device.");
+                            socket.emit('updatePushNotificationId', e.regid);
+                            console.log("Push notification id updated on the server.");
                         }
                     break;
          
@@ -887,7 +891,8 @@
                     var requestString = recommendRequest.id + ", " + recommendRequest.what + ", " +
                                         recommendRequest.where + " From: " +recommendRequest.from;
                     
-                    loadReceivedRequests();
+                    requestCounter = 0;
+                    addNewReceivedRequestToList(requestString, request.desc);
 
                     /* inform the user and redirect to the request page. */
                     alert("New recommend request: " + requestString + " Description: " + recommendRequest.desc);
@@ -1003,7 +1008,6 @@
                     console.log('Connection problem occurred.');
             }
 
-            var pushNotificationRegisterId;
             /*
              * Checks if the app is used for the first time, and changes the page according to the answer.
              * If yes, connects to the server, else redirects to the register page.
@@ -1021,14 +1025,14 @@
                     phoneNumber = window.localStorage.getItem("phoneNumber");
                     name = window.localStorage.getItem("name");
 
-                    if (!phoneNumber || !name || !pushNotificationRegisterId || !devicePlatform) {	// if any of them is missing.
+                    if (!phoneNumber || !name) {	// if any of them is missing.
                         alert("Couldn't find stored login data.");
                         console.log("Couldn't find stored data. Redirecting to register page.");
                         $.mobile.pageContainer.pagecontainer("change", "#registerPage", {transition: "none"});
                         return;
                     }
-
-                    socket.emit("connectToServer", phoneNumber, 42, name/*, pushNotificationId, devicePlatform*/);
+                    
+                    socket.emit("connectToServer", phoneNumber, 42, name, devicePlatform, pushNotificationId);
                 } else {
                     console.log("App is used for the first time. Redirecting to register page.");
                     alert("Registeration needed.");
