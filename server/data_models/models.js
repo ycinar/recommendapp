@@ -10,6 +10,8 @@ exports.UserSchema = new Schema({
 	phoneNumber: {type: String, required: true, index: {unique: true}},	// phone number of the user.
 	name: String,	// the username which user chooses in the app.
 	//password: String // a hashed phone number maybe.(to block unintended connections)
+	devicePlatform: String,
+	pushNotificationId: String
 })
 
 // add methods here.
