@@ -45,7 +45,7 @@ var recommendRequestCounter;
 
 /* use gcm for android push notifications */
 var gcm = require('node-gcm');
-var sender = new gcm.Sender('AIzaSyChghAWBJhseeOPi3YfgymfgLsapvP3Jvo');
+var sender = new gcm.Sender('AIzaSyAUbn5MOzPipgCJMDs3BRRS2DosDpJlRao');
 
 
 KeyValue.findOne({key: 'recommendRequestCounter'}, function (err, variable) {
@@ -75,6 +75,9 @@ function sendPushNotifications(receivers, message) {
 		User.findOne({phoneNumber: receiver}, function (err, user) {
 			if (err) {
 				console.error(err);
+				return;
+			}
+			if (!user) {	// couldn't find the user.
 				return;
 			}
 			if (user.pushNotificationId != '') {	// we have a valid push notification 
@@ -180,7 +183,7 @@ io.sockets.on('connection', function (socket) {
 				console.log('DB: Saving the user.');
 
 				if (!name) {
-					name = '';	// default username.
+					connectedUser.name = '';	// default username.
 				}
 
 				console.log(connectedUser);
@@ -308,8 +311,8 @@ io.sockets.on('connection', function (socket) {
 
 			/* prepare message for gcm */
 			var message = new gcm.Message();
-			message.addData('title', 'New recommendation request!');
-			message.addData('message','Sender: ' + recommendRequest.from, 'Topic: ' + what + ", " + where);
+			message.addData('title', 'New request!');
+			message.addData('message','Sender: ' + recommendRequest.from + ' Topic: ' + what + ", " + where);
 			message.timeToLive = 3600 * 24; // Duration in seconds to hold in GCM and retry before timing out. Default 4 weeks (2,419,200 seconds) if not specified.
 
 			/* Sending push notifications to receivers who are not online. */
@@ -392,7 +395,7 @@ io.sockets.on('connection', function (socket) {
 				/* prepare message for gcm. */
 				var message = new gcm.Message();
 				message.addData('title', 'New reply!');
-				message.addData('message','Sender: ' + _phoneNumber + ' Reply: ' + reply);
+				message.addData('message','Sender: ' + _phoneNumber + ' Reply: ' + reply.reply);
 				message.timeToLive = 3000;
 
 				/* send message as push notification. */
@@ -430,12 +433,22 @@ io.sockets.on('connection', function (socket) {
 							if (err) {
 								return console.error(err);
 							}
-							var onApp = contactFromDb ? true : false;
+							var onApp = contactFromDb ? true : false;	// if contact exists, onApp field is true.
 							resultContactList.push({displayName: contactWrapped.displayName, phoneNumber: phoneNumberWrapped, onApp: onApp});
-							console.log('Phone number: ' + phoneNumberWrapped);
 							/* if we have reached to the end of the loop, call client's function to send the result. */
 							if (--validPnCounter == 0) {
-								console.log('DB: Sending onApp list back.');
+								resultContactList.sort(function (contact1, contact2) {
+									var name1 = contact1.displayName.toLowerCase();
+									var name2 = contact2.displayName.toLowerCase();
+									if (name1 < name2) {	// ascending	
+										return -1;
+									} else if (name1 > name2) {
+										return 1;
+									} else {
+										return 0;
+									}
+								});
+								console.log('DB: Sending sorted onApp list back.');
 								socket.emit('updateUsersOnApp', resultContactList);
 							}
 						});
@@ -452,6 +465,9 @@ io.sockets.on('connection', function (socket) {
 		User.findOne({phoneNumber: _phoneNumber}, function (err, user) {
 			if (err) {
 				console.error(err);
+				return;
+			}
+			if (!user) {	// user is not registered before.
 				return;
 			}
 			user.pushNotificationId = id;
