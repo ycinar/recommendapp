@@ -428,7 +428,7 @@ io.sockets.on('connection', function (socket) {
 						var contactWrapped = contact;
 						var pnIndexWrapped = pnIndex;
 						var contactIndexWrapped = contactIndex;
-						var phoneNumberWrapped = contactWrapped.phoneNumbers[pnIndexWrapped];	// value is the phone number.
+						var phoneNumberWrapped = contactWrapped.phoneNumbers[pnIndexWrapped].value;	// value is the phone number on Android devices(needs to be tested on ios).
 						User.findOne({phoneNumber: phoneNumberWrapped}, function (err, contactFromDb) {
 							if (err) {
 								return console.error(err);
