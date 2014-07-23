@@ -11,7 +11,9 @@ Main client logic is located in client/www/. For example, we currently have inde
 
 In order to build:
 1. cd client
-2. cordova build
+2. phonegap build
+
+Note: The project is created by using PhoneGap 3.5.0-0.20.4
 
 Server:
 ---------
@@ -21,26 +23,50 @@ Some notes on usage:
 ---------
 - For connecting to the server, client should call connectToServer() method of the server. Call syntax:
 
-	socket.emit('connectToServer', username, password, savedUsername);
+```
+socket.emit('connectToServer', phoneNumber, password, name, devicePlatform, pushNotificationId);
 
-	@username: phone number of the user.
-	@password: for blocking unintended connections. Should be synced with server's password.
-	@savedUsername: the username which user chooses, shown in the app.
+phoneNumber: phone number of the user.
+password: for blocking unintended connections. Should be synced with server's password.
+name: the name which user chooses, shown in the app.
+devicePlatform: the platform of the device.
+pushNotificationId: id for sending push notifications.
+```
 
-- For sending recommend requests, client should call sendRecommendRequest() method of the server. Call syntax:
+- For sending recommendation requests, client should call sendRecommendRequest() method of the server. Call syntax:
 
-	socket.emit('sendRecommendRequest', sender, receivers, what, where, description);
+```
+socket.emit('sendRecommendRequest', receivers, what, where, description, forwardedRequestInfo);
 
-	@sender: the phone number of the request sender.
-	@receivers: an array contains userId(phone numbers)s of the receivers.
-	@what: the topic of the recommend request.
-	@where: recommend is requested in the "where" area.
-	@description: a brief description of the recommend request. 
+receivers: an array contains userId(phone numbers)s of the receivers.
+what: the topic of the recommend request.
+where: recommend is requested in the "where" area.
+description: a brief description of the recommend request.
+forwardedRequestInfo: use if the request is forwarded. must have fields: id, sentDate, sender
+```
 
-- For getting recommend requests, client should implement getRecommendRequest() method. Method syntax:
+- For getting recommendation requests, client should implement getRecommendRequest() method. Method syntax:
 
-	socket.on('getRecommendRequest', function(sender, what, where, description) {
-		// incoming request handling code here.
-	});
+```
+socket.on('getRecommendRequest', function(recommendRequest) {
+	// incoming request handling code here.
+});
 
-Important: The phone numbers and other variables in the function calls should be represented as Strings.
+recommendRequest: Check the server code for recommendRequests's fields.
+```
+
+- For checking if the contacts of the user use the app, user should call checkContactsOnApp() method of the server. Call syntax:
+
+```
+socket.emit('checkContactsOnApp', contacts);
+
+contacts: contact list of the user.
+```
+The server then, sends the checked contacts back to the user. To get this contacts, user should implement updateUsersOnApp() method.
+Method syntax:
+
+```
+socket.on('updateUsersOnApp', function(contacts) {
+	// handle the contacts array containing contacts with onApp fields.
+});
+```
