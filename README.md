@@ -70,3 +70,47 @@ socket.on('updateUsersOnApp', function(contacts) {
 	// handle the contacts array containing contacts with onApp fields.
 });
 ```
+
+Libraries:
+---------
+
+- Client side libraries:
+
+Some PhoneGap plugins used for this project:
+
+			Plugin 									Documentation
+	PhoneGap push notification plugin: https://github.com/phonegap-build/PushPlugin
+	PhoneGap contacts plugin:		   http://docs.phonegap.com/en/3.0.0/cordova_contacts_contacts.md.html
+	PhoneGap device plugin: 		   http://docs.phonegap.com/en/3.0.0/cordova_device_device.md.html
+	PhoneGap SMS plugin:			   https://github.com/aharris88/phonegap-sms-plugin
+
+For a list of basic PhoneGap plugins and usage explanations: docs.phonegap.com/en/3.0.0/guide_cli_index.md.html , Add Features section
+
+- Server side libraries:
+
+```
+		Library														Info
+	Node.js   --> Server-side Javascript, Website: http://nodejs.org/
+	socket.io --> A node library enables real-time bidirectional event-based communication between server and client. Website: http://socket.io/
+	MongoDB	  --> A NoSQL database. Detailed info on usage of MongoDB with Node.js: http://docs.mongodb.org/ecosystem/drivers/node-js/
+	node-gcm  --> Node.js library for sending push notifications. Documentation: https://github.com/ToothlessGear/node-gcm
+```
+
+Installation Guide of The Server Side Libraries:
+
+To install these server side libraries, on the command line use these commands:
+
+```
+[sudo] apt-get install nodejs --> For Node.js
+[sudo] apt-get install npm    --> Node Package Manager, for downloading node libraries.
+[sudo] npm install socket.io  --> For socket.io
+[sudo] npm install mongodb 	  --> For MongoDB
+[sudo] npm install node-gcm	  --> For push notifications with Google Cloud Messaging(For Android devices).
+```
+Note: Since the socket.io API has changed on 1.x versions, the project is not compatible with 1.x versions of socket.io. Works fine with socket.io <1.x . It is working with socket.io 0.9.16 on my machine.
+
+To install a version of a library with npm:
+
+```
+[sudo] npm install <library>@<version> --> e.g. $ npm install socket.io@0.9.16
+```
