@@ -141,10 +141,13 @@
 				<a data-role="button" data-inline = "true" onclick="changeGroupMembers()">Change Group Members</a>
 			</div>
 			
-			<div data-role="fieldcontain" id="contactsList">
+			<div data-role="fieldcontain" id="contactsButtons">
 				<a data-role="button" onclick="sendOrForwardRequest()">Send Request or Forward Message</a>
-				<p>Contacts	  PhoneNumber     OnApp</p>
-				<a data-role="button" onclick="uncheckAllContacts()">Uncheck all</a>
+				<a data-role="button" data-inline="true" onclick="uncheckAllContacts()">Uncheck all</a>
+				<a data-role="button" data-inline="true" onclick="refreshContactList()">Refresh list</a>
+			</div>
+			<div data-role="fieldcontain" id="contactsList">
+				
 			</div>
 			
 		</div>
@@ -258,6 +261,23 @@
 
 		<script>
 			/*
+			 * Refreshes the contact list: re-checks the contacts if they are using the app, 
+			 * and displays a list of new contacts list with updated onApp fields.
+			 */
+			function refreshContactList() {
+				$("#contactsList").html('<div id="refreshMessage"><h4>Refreshing...</h4></div>');
+				
+				database.transaction(function (tx) {
+					tx.executeSql("DELETE FROM CONTACTONAPP");
+				}, function onError(err) { sqlOnError(err, "deleting previous contact on app members"); }, 
+				function onSuccess() {
+					console.log("Deleting old contact on app members from phone's db successful.");
+					contactCount = 0;
+					loadContacts();
+					$("#refreshMessage").remove();
+				});
+			}
+			/*
 			 * Gets the checked groups in the ui, and returns their values in an array.
 			 */
 			function getChosenGroups() {
@@ -329,6 +349,7 @@
 					if (newGroupMembers.length == 0) {
 						alert("Deleting the group.");
 						removeGroupCheckbox(groupName);
+						groupCount--;
 						return;
 					}
 					
@@ -888,6 +909,7 @@
 					// create group table, contacts are added in the table. groupless contacts are also added in this table(groupName = '').
 					tx.executeSql("CREATE TABLE IF NOT EXISTS CONTACTGROUP(phoneNumber VARCHAR(30), name VARCHAR(40), groupName VARCHAR(30), PRIMARY KEY (phoneNumber, groupName))");
 					
+					tx.executeSql("CREATE TABLE IF NOT EXISTS CONTACTONAPP(phoneNumber VARCHAR(30), displayName VARCHAR(40), onApp BOOLEAN, PRIMARY KEY (phoneNumber, displayName))");
                     // add a test recommend request into the database.
                     //tx.executeSql("INSERT INTO RECOMMENDREQUEST VALUES (0, '2014-17-06 11:00:00', '1234', '1234,2345', 'Supermarket', 'Galway', 'A supermarket near Galway'," + STATUS_SENT + ')');
 
@@ -1021,26 +1043,8 @@
                 socket.on('updateUsersOnApp', function (contacts) {
                 	console.log("Checking contacts process successful. Updating contact list.");
                 	
-                	var contactsNotOnApp = [];
-                    for (var i = 0; i < contacts.length; i++) {
-                        // var checkBoxId = '"checkBox' + i + '"';
-                        var contact = contacts[i];
-                        var onApp = contact.onApp ? 'Yes' : 'No';
-                        var userData = contact.displayName + ',' + contact.phoneNumber + ',' + onApp;
-                        if (contact.onApp) {
-                        	addContactCheckboxToContactsPage(userData);
-                        } else {
-                        	contactsNotOnApp.push(userData);
-                        }
-                    }
-                    
-                    // add onApp = 'No' contacts later.
-                    for (var i = 0; i < contactsNotOnApp.length; i++) {
-                    	addContactCheckboxToContactsPage(contactsNotOnApp[i]);
-                    }
-                    console.log("Contact list updated.");
-
-                    $("#contactsList").trigger("create");	// enhance the contacts list, it gives jqm look to the list.
+                	addContactsToDatabase(contacts);
+                	addContactsToContactsPage(contacts);
                 });
 
                 socket.on('saveSentRecommendRequest', function (recommendRequest) {
@@ -1075,7 +1079,7 @@
                 
                 socket.on('notifiedOfForwardedRequest', function (receiver) {
                 	console.log("Your message has been forwarded to " + receiver + " by another person.");
-                	alert(console.log("Your message has been forwarded to " + receiver + " by another person."));
+                	alert("Your message has been forwarded to " + receiver + " by another person.");
                 });
                 /**
                  * Called when user disconnects from the server.
@@ -1094,20 +1098,57 @@
 
             }
 
+            function addContactsToDatabase(contacts) {
+            	database.transaction(function (tx) {
+					for (var i = 0; i < contacts.length; i++) {
+						var contact = contacts[i];
+						var onApp = contact.onApp ? 1 : 0;
+						var insertString = "INSERT INTO CONTACTONAPP VALUES('" + contact.phoneNumber + "', '" + contact.displayName + "', " + onApp + ")";
+						tx.executeSql(insertString);
+					}
+					
+                }, function onError(err) { sqlOnError(err, "inserting contact to CONTACTONAPP table"); }, function onSuccess() { // called on success.
+                		console.log("Contacts with onApp fields has been saved in the phone's db.");
+                	});
+            }
+            function addContactsToContactsPage(contacts) {
+            	var contactsNotOnApp = [];
+                for (var i = 0; i < contacts.length; i++) {
+                    // var checkBoxId = '"checkBox' + i + '"';
+                    var contact = contacts[i];
+                    var onApp = contact.onApp ? 'Yes' : 'No';
+                    var userData = contact.displayName + ',' + contact.phoneNumber + ',' + onApp;
+                    if (contact.onApp) {	// add users who are on app first.
+                    	addContactCheckboxToContactsPage(userData);
+                    } else {
+                    	contactsNotOnApp.push(userData);
+                    }
+                }
+                
+                // add onApp = 'No' contacts later.
+                for (var i = 0; i < contactsNotOnApp.length; i++) {
+                	addContactCheckboxToContactsPage(contactsNotOnApp[i]);
+                }
+                console.log("Contact list updated.");
+
+                $("#contactsList").trigger("create");	// enhance the contacts list, it gives jqm look to the list.
+            }
+
 			function alertCallback() {
                     console.log('Connection problem occurred.');
             }
 
+            var recommendAppUsedBefore = false;
             /*
              * Checks if the app is used for the first time, and changes the page according to the answer.
              * If yes, connects to the server, else redirects to the register page.
              */
             function checkFirstTimeLaunch() {
 
-                window.localStorage.clear();	// clear storage, for testing purposes.
+                //window.localStorage.clear();	// clear storage, for testing purposes.
 
                 // check if the user is using the app for the first time.
-                var recommendAppUsedBefore = window.localStorage.getItem("recommendAppUsedBefore");
+                recommendAppUsedBefore = window.localStorage.getItem("recommendAppUsedBefore");
                 if (recommendAppUsedBefore) {	// if used
                     console.log("App is used before. Displaying home page.");
 
@@ -1121,7 +1162,13 @@
                         $.mobile.pageContainer.pagecontainer("change", "#registerPage", {transition: "none"});
                         return;
                     }
-                    
+
+                    // load contacts from db.
+                    console.log("App is used before. Loading contacts from database.");
+                    loadContactsFromDatabase();
+
+                    // connect to the server.
+                    console.log("Connecting to the server with phone number: " + phoneNumber + ", name: " + name);
                     socket.emit("connectToServer", phoneNumber, 42, name, devicePlatform, pushNotificationId);
                 } else {
                     console.log("App is used for the first time. Redirecting to register page.");
@@ -1132,6 +1179,21 @@
                 }
             }
 
+            function loadContactsFromDatabase() {
+            	var contacts = [];
+            	database.transaction (function (tx) {
+                    tx.executeSql("SELECT * FROM CONTACTONAPP ORDER BY displayName ASC", [], function (tx, results) {
+                        var len = results.rows.length;
+                        if (len == 0) {	// no replies for anything.
+                        	return;
+                        }
+                        for (var i = 0; i < len; i++) {
+                        	contacts.push(results.rows.item(i));
+                        }
+                        addContactsToContactsPage(contacts);
+                    });
+                }, function onError(err) { sqlOnError(err, "selecting received replies"); }, function onSuccess() {console.log("Response select statement and page creation successful.");});
+            }
             var allContacts = null;
             var contactCount = 0;
             /*
