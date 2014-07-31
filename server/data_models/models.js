@@ -34,7 +34,8 @@ exports.RecommendRequestSchema = new Schema({
 	to: [String],	// more than one receiver
 	what: String,
 	where: String,
-	desc: String
+	desc: String,
+	forwardCount: 0
 })
 
 // add methods here.
@@ -50,7 +51,8 @@ exports.ReplySchema = new Schema({
 	receiver: String,
 	date: Date,
 	sender: String,
-	reply: String
+	reply: String,
+	requestForwardCount: 0
 })
 
 // add methods here.
