@@ -10,18 +10,10 @@
 		<script src="js/jquery-mobile-1.4.3/jquery.mobile-1.4.3.min.js"></script>
         <script type="text/javascript" charset="utf-8" src="cordova.js"></script>
         <script type="text/javascript" src="js/socket.io.js"></script>
-        <script src="js/jsShare.js" type="text/javascript"></script>
-        <link href="js/jsShare.css" rel="stylesheet" type="text/css" />
         <!--<script src='js/fastbutton.js'></script> -->
 	</head>
 
-	<style type="text/css">
-		.ui-page {
-	    	-webkit-backface-visibility: hidden;
-		}
-	</style>
-
-	<!-- add class='use-fastclick' to body tag -->
+	<!-- add class='use-fastclick' to body tag to use fastclick-->
 	<body>
 		
 		<!-- HomePage start -->
@@ -64,19 +56,38 @@
 
 			</form>
 
-            <h3>Share the app:</h3>
-            <div id="shareButtonsExpanded">
-                <!-- Share buttons -->
-            </div>
-
-            <script type="text/javascript">
-                $(document).ready(function() {
-                    $('#shareButtonsExpanded').jsShare({ initialdisplay: 'expanded', maxwidth: 360 });
-                });
-            </script>
+            <a href="#sharePage" data-role="button" class="ui-btn">Share the app</a>
 		</div>
 		<!-- HomePage end -->
 		
+		<!-- SharePage start -->
+		<div data-role="page" class="share" id="sharePage">
+			<a onclick="window.plugins.socialsharing.shareViaFacebook('Hey, I am using RecommendApp! If you want to get recommendations from your friends, install the app. Link: http://www.example.com/recommendapp', null /* img */, null /* url */, function() {console.log('share ok')}, function(errormsg){alert(errormsg)})"><img src="img/Facebook.png"></a>
+			<pre>
+				
+			</pre>
+			<a onclick="window.plugins.socialsharing.shareViaTwitter('Hey, I am using RecommendApp! If you want to get recommendations from your friends, install the app. Link: ', null /* img */, 'http://www.example.com/recommendapp')"><img src="img/Twitter.png"></a>
+			<pre>
+				
+			</pre>
+			<a onclick="window.plugins.socialsharing.shareViaWhatsApp('Hey, I am using RecommendApp! If you want to get recommendations from your friends, install the app. Link: ', null /* img */, 'http://www.example.com/recommendapp' /* url */, function() {console.log('share ok')}, function(errormsg){alert(errormsg)})"><img src="img/Whatsapp.png" width="100px" height="88px"></a>
+			<pre>
+				
+			</pre>
+			<!-- You can add mail code to here docs: https://github.com/EddyVerbruggen/SocialSharing-PhoneGap-Plugin-->
+			<a onclick=""><img src="img/Mail.png"></a>
+		</div>
+		
+		<!-- SharePage end -->
+		<style type="text/css">
+			.share {
+    			position:absolute;             /* position in the center of the screen */
+    			left:50%;
+    			top:50%;
+    			text-align:center;
+    			padding:120px 0px 0px 0px;
+			}
+		</style>
 		<!-- RequestsPage start -->
 		<div data-role="page" id="requestsPage" data-dom-cache="true">
 			
@@ -969,8 +980,8 @@
                  */
                 socket.on('getRecommendRequest', function (recommendRequest) {
                     /* save received request in the db. */
+                    var forwardedFrom = '';
                     database.transaction(function (tx) {
-                    	var forwardedFrom = '';
                     	if (recommendRequest.forwardedFrom != undefined) {	// this is a forwarded request.
                     		console.log("Received a forwarded recommend request.");
                     		forwardedFrom = recommendRequest.forwardedFrom;
@@ -1162,7 +1173,7 @@
              */
             function checkFirstTimeLaunch() {
 
-                window.localStorage.clear();	// clear storage, for testing purposes.
+               //window.localStorage.clear();	// clear storage, for testing purposes.
 
                 // check if the user is using the app for the first time.
                 recommendAppUsedBefore = window.localStorage.getItem("recommendAppUsedBefore");
