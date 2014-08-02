@@ -42,7 +42,7 @@ receivers: an array contains userId(phone numbers)s of the receivers.
 what: the topic of the recommend request.
 where: recommend is requested in the "where" area.
 description: a brief description of the recommend request.
-forwardedRequestInfo: use if the request is forwarded. must have fields: id, sentDate, sender
+forwardedRequestInfo: use if the request is forwarded. must have fields: id, sentDate, sender, forwardCount
 ```
 
 - For getting recommendation requests, client should implement getRecommendRequest() method. Method syntax:
@@ -83,6 +83,7 @@ Some PhoneGap plugins used for this project:
 	PhoneGap contacts plugin:		   http://docs.phonegap.com/en/3.0.0/cordova_contacts_contacts.md.html
 	PhoneGap device plugin: 		   http://docs.phonegap.com/en/3.0.0/cordova_device_device.md.html
 	PhoneGap SMS plugin:			   https://github.com/aharris88/phonegap-sms-plugin
+	PhoneGap SocialShare plugin: 	   https://github.com/EddyVerbruggen/SocialSharing-PhoneGap-Plugin
 
 For a list of basic PhoneGap plugins and usage explanations: docs.phonegap.com/en/3.0.0/guide_cli_index.md.html , Add Features section
 
@@ -107,7 +108,7 @@ To install these server side libraries, on the command line use these commands:
 [sudo] npm install mongodb 	  --> For MongoDB
 [sudo] npm install node-gcm	  --> For push notifications with Google Cloud Messaging(For Android devices).
 ```
-Note: Since the socket.io API has changed on 1.x versions, the project is not compatible with 1.x versions of socket.io. Works fine with socket.io <1.x . It is working with socket.io 0.9.16 on my machine.
+Note: Since the socket.io API has changed on 1.x versions, the project is NOT compatible with 1.x versions of socket.io. Works fine with socket.io <1.x . It is working fine with socket.io 0.9.16 on my machine.
 
 To install a version of a library with npm:
 

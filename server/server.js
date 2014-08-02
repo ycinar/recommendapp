@@ -223,7 +223,7 @@ io.sockets.on('connection', function (socket) {
 
 					if (indexOfUser !== -1) {	// there is an undelivered request for user.
 						console.log('Undelivered Request for new connecting user ' + phoneNumber);
-						io.sockets.socket(socket.id).emit('getRecommendRequest', request);	// send the request.
+						socket.emit('getRecommendRequest', request);	// send the request.
 						console.log('Delivered.');
 						request.receivers.splice(indexOfUser, 1);	// clean the user from the list, because the request has been sent.
 
@@ -266,7 +266,7 @@ io.sockets.on('connection', function (socket) {
 			var now = (new Date()).toISOString().substring(0,19).replace('T', ' ');
 			var recommendRequest;
 			if (forwardedRequestInfo == null) {	// a normal request
-				recommendRequest = new RecommendRequest({id: parseInt(recommendRequestCounter.value), date: now, from: _phoneNumber, to: receivers, what: what, where: where, desc: description});
+				recommendRequest = new RecommendRequest({id: parseInt(recommendRequestCounter.value), date: now, from: _phoneNumber, to: receivers, what: what, where: where, desc: description, forwardCount: 0});
 		
 				console.log('Coming recommend request: ' + recommendRequest);
 
@@ -280,7 +280,24 @@ io.sockets.on('connection', function (socket) {
 					socket.emit('saveSentRecommendRequest', recommendRequest);
 				});
 			} else {	// a forwarded request. use the same recommendation request format with a normal request.
-				recommendRequest = {id: forwardedRequestInfo.id, date: forwardedRequestInfo.sentDate, from: forwardedRequestInfo.sender, to: receivers, what: what, where: where, desc: description};
+
+				/* find and update forward count of the recommendation request. */
+				RecommendRequest.findOne({id: forwardedRequestInfo.id}, function (err, request) {
+					if (err) {
+						return console.error(err);
+					}
+					if (request == null) {
+						return;
+					}
+					request.forwardCount += 1;
+					request.save(function (err) {
+						if (err) {
+							return console.error(err);
+						}
+						console.log("DB: Forward count increased by 1 on the server.");
+					})
+				});
+				recommendRequest = {id: forwardedRequestInfo.id, date: forwardedRequestInfo.sentDate, from: forwardedRequestInfo.sender, to: receivers, what: what, where: where, desc: description, forwardedFrom: _phoneNumber, forwardCount: forwardedRequestInfo.forwardCount + 1};
 			}
 
 			/*  send request to all receivers: if they are online, send now; else, add to the undelivered request array */
@@ -292,15 +309,15 @@ io.sockets.on('connection', function (socket) {
 
 					var receiverSocketId = onlineUsers[receiverIndex].socketId;
 
-					// send request to the specific user which is identified by its socket id in the server.
 					io.sockets.socket(receiverSocketId).emit('getRecommendRequest', recommendRequest);
+
 					if (forwardedRequestInfo != null) {
 						var userToNotifyIndex = findUserIndex(recommendRequest.from);
 						if (userToNotifyIndex != -1) {	// user is online now. notify that his request has been forwarded to another person.
 							io.sockets.socket(onlineUsers[userToNotifyIndex].socketId).emit('notifiedOfForwardedRequest', receivers[i]);
 						} else {
 							console.log("Notify owner is not online.");
-							// @TODO: store notifications deliver later.
+							// @TODO: store notifications, deliver later.
 						}
 					}
 
@@ -312,7 +329,7 @@ io.sockets.on('connection', function (socket) {
 			/* prepare message for gcm */
 			var message = new gcm.Message();
 			message.addData('title', 'New request!');
-			message.addData('message','Sender: ' + recommendRequest.from + ' Topic: ' + what + ", " + where);
+			message.addData('message','Sender: ' + recommendRequest.from + ' ### ' + what + ", " + where);
 			message.timeToLive = 3600 * 24; // Duration in seconds to hold in GCM and retry before timing out. Default 4 weeks (2,419,200 seconds) if not specified.
 
 			/* Sending push notifications to receivers who are not online. */
@@ -322,9 +339,9 @@ io.sockets.on('connection', function (socket) {
 			if (undeliveredRequestReceivers.length !== 0) {	// some of the users are not online, some messages couldn't be delivered.
 				console.log('Receivers ' + undeliveredRequestReceivers + ' are not online for request ' + recommendRequest);
 				if (forwardedRequestInfo == null) {	// normal request
-					undeliveredRequests.push({id: parseInt(recommendRequestCounter.value), date: recommendRequest.date, from: _phoneNumber, what: what, where: where, desc: description, receivers: undeliveredRequestReceivers, forwarded: false});
+					undeliveredRequests.push({id: parseInt(recommendRequestCounter.value), date: recommendRequest.date, from: _phoneNumber, what: what, where: where, desc: description, receivers: undeliveredRequestReceivers, forwarded: false, forwardCount: 0});
 				} else {	// a forwarded request.
-					undeliveredRequests.push({id: recommendRequest.id, date: recommendRequest.date, from: recommendRequest.from, what: what, where: where, desc: description, receivers: undeliveredRequestReceivers, forwarded: true});
+					undeliveredRequests.push({id: recommendRequest.id, date: recommendRequest.date, from: recommendRequest.from, what: what, where: where, desc: description, receivers: undeliveredRequestReceivers, forwarded: true, forwardedFrom: _phoneNumber, forwardCount: forwardedRequestInfo.forwardCount + 1});
 				}
 				console.log('Undelivered Requests: ');
 				console.log(undeliveredRequests);
@@ -368,13 +385,13 @@ io.sockets.on('connection', function (socket) {
 	/*
 	 * The function for sending recommend replies to a specific user.
 	 */
-	socket.on('sendReply', function (requestId, replyReceiver, reply) {
+	socket.on('sendReply', function (requestId, requestForwardCount, replyReceiver, reply) {
 		if (!_connectionAccepted) {	// invalid connection, disconnect.
 			socket.disconnect();
 			return;
 		} else {
 			var now = (new Date()).toISOString().substring(0,19).replace('T', ' ');
-			var reply = new Reply({requestId: requestId, date: now, sender: _phoneNumber, receiver: replyReceiver, reply: reply});
+			var reply = new Reply({requestId: requestId, date: now, sender: _phoneNumber, receiver: replyReceiver, reply: reply, requestForwardCount: requestForwardCount});
 			reply.save(function (err) {
 				if (err) {	// if any error occures.
 					return console.error(err);
