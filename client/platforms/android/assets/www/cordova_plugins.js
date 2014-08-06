@@ -73,6 +73,20 @@ module.exports = [
         "clobbers": [
             "device"
         ]
+    },
+    {
+        "file": "plugins/org.apache.cordova.plugin.sms/www/sms.js",
+        "id": "org.apache.cordova.plugin.sms.Sms",
+        "clobbers": [
+            "window.sms"
+        ]
+    },
+    {
+        "file": "plugins/nl.x-services.plugins.socialsharing/www/SocialSharing.js",
+        "id": "nl.x-services.plugins.socialsharing.SocialSharing",
+        "clobbers": [
+            "window.plugins.socialsharing"
+        ]
     }
 ];
 module.exports.metadata = 
@@ -80,7 +94,9 @@ module.exports.metadata =
 {
     "org.apache.cordova.contacts": "0.2.12-dev",
     "com.phonegap.plugins.PushPlugin": "2.2.0",
-    "org.apache.cordova.device": "0.2.11-dev"
+    "org.apache.cordova.device": "0.2.11-dev",
+    "org.apache.cordova.plugin.sms": "0.1.0",
+    "nl.x-services.plugins.socialsharing": "4.3.2"
 }
 // BOTTOM OF METADATA
 });

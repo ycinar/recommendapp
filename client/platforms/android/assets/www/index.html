@@ -2,31 +2,24 @@
 <html>
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-		<link rel="stylesheet" href="js/jquery-mobile-1.4.3/jquery.mobile-1.4.3.min.css">
 		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+		<link rel="stylesheet" href="js/jquery-mobile-1.4.3/jquery.mobile-1.4.3.min.css">
+		<!--<link rel="stylesheet" href="themes/test-theme.min.css" />-->
+		<!--<link rel="stylesheet" href="themes/jquery.mobile.icons.min.css" />-->
 		<script src="js/jquery-1.11.1.js"></script>
 		<script src="js/jquery-mobile-1.4.3/jquery.mobile-1.4.3.min.js"></script>
         <script type="text/javascript" charset="utf-8" src="cordova.js"></script>
         <script type="text/javascript" src="js/socket.io.js"></script>
-        <script src="js/jsShare.js" type="text/javascript"></script>
-        <link href="js/jsShare.css" rel="stylesheet" type="text/css" />
         <!--<script src='js/fastbutton.js'></script> -->
 	</head>
 
-	<style type="text/css">
-		.ui-page {
-	    	-webkit-backface-visibility: hidden;
-		}
-	</style>
-
-	<!-- add class='use-fastclick' to body tag -->
+	<!-- add class='use-fastclick' to body tag to use fastclick-->
 	<body>
 		
 		<!-- HomePage start -->
 		<div data-role="page" id="homePage" data-dom-cache="true">
-		
 			<!-- NavigationBarHeader start -->
-			<div data-role="header" data-position="fixed" id="navbar">
+			<div data-role="header" id="navbar">
 				<div data-role="navbar" data-iconpos="bottom">
 					<ul>
 						<li><a href="#homePage" data-icon="home" class="ui-btn-active ui-state-persist">Home</a></li>
@@ -63,24 +56,43 @@
 
 			</form>
 
-            <h3>Share the app:</h3>
-            <div id="shareButtonsExpanded">
-                <!-- Share buttons -->
-            </div>
-
-            <script type="text/javascript">
-                $(document).ready(function() {
-                    $('#shareButtonsExpanded').jsShare({ initialdisplay: 'expanded', maxwidth: 360 });
-                });
-            </script>
+            <a href="#sharePage" data-role="button" class="ui-btn">Share the app</a>
 		</div>
 		<!-- HomePage end -->
 		
+		<!-- SharePage start -->
+		<div data-role="page" class="share" id="sharePage">
+			<a onclick="window.plugins.socialsharing.shareViaFacebook('Hey, I am using RecommendApp! If you want to get recommendations from your friends, install the app. Link: http://www.example.com/recommendapp', null /* img */, null /* url */, function() {console.log('share ok')}, function(errormsg){alert(errormsg)})"><img src="img/Facebook.png"></a>
+			<pre>
+				
+			</pre>
+			<a onclick="window.plugins.socialsharing.shareViaTwitter('Hey, I am using RecommendApp! If you want to get recommendations from your friends, install the app. Link: ', null /* img */, 'http://www.example.com/recommendapp')"><img src="img/Twitter.png"></a>
+			<pre>
+				
+			</pre>
+			<a onclick="window.plugins.socialsharing.shareViaWhatsApp('Hey, I am using RecommendApp! If you want to get recommendations from your friends, install the app. Link: ', null /* img */, 'http://www.example.com/recommendapp' /* url */, function() {console.log('share ok')}, function(errormsg){alert(errormsg)})"><img src="img/Whatsapp.png" width="100px" height="88px"></a>
+			<pre>
+				
+			</pre>
+			<!-- You can add mail code to here docs: https://github.com/EddyVerbruggen/SocialSharing-PhoneGap-Plugin-->
+			<a onclick=""><img src="img/Mail.png"></a>
+		</div>
+		
+		<!-- SharePage end -->
+		<style type="text/css">
+			.share {
+    			position:absolute;             /* position in the center of the screen */
+    			left:50%;
+    			top:50%;
+    			text-align:center;
+    			padding:120px 0px 0px 0px;
+			}
+		</style>
 		<!-- RequestsPage start -->
 		<div data-role="page" id="requestsPage" data-dom-cache="true">
 			
 			<!-- NavigationBarHeader start -->
-			<div data-role="header" data-position="fixed" id="navbar">
+			<div data-role="header" id="navbar">
 				<div data-role="navbar" data-iconpos="bottom">
 					<ul>
 						<li><a href="#homePage" data-icon="home">Home</a></li>
@@ -96,9 +108,7 @@
             <h3 id="incomingRecommendRequest">Received recommend requests:</h3>
 
             <div id="receivedRequests">
-                <ul data-role="listview">
-                    <!-- Requests added here -->
-                </ul>
+                
             </div>
 
         </div>
@@ -125,7 +135,7 @@
 		<div data-role="page" id="contactsPage" data-dom-cache="true">
 			
 			<!-- NavigationBarHeader start -->
-			<div data-role="header" data-position="fixed" id="navbar">
+			<div data-role="header" id="navbar">
 				<div data-role="navbar" data-iconpos="bottom">
 					<ul>
 						<li><a href="#homePage" data-icon="home">Home</a></li>
@@ -137,10 +147,18 @@
 				</div>
 			</div>
 			<!-- NavigationBarHeader end -->
+			<div data-role="fieldcontain" id="groupsList">
+				<a data-role="button" data-inline = "true" onclick="addGroup()">Add Group</a>
+				<a data-role="button" data-inline = "true" onclick="changeGroupMembers()">Change Group Members</a>
+			</div>
 			
+			<div data-role="fieldcontain" id="contactsButtons">
+				<a data-role="button" onclick="sendOrForwardRequest()">Send Request or Forward Message</a>
+				<a data-role="button" data-inline="true" onclick="uncheckAllContacts()">Uncheck all</a>
+				<a data-role="button" data-inline="true" onclick="refreshContactList()">Refresh list</a>
+			</div>
 			<div data-role="fieldcontain" id="contactsList">
-				<p>Contacts	  PhoneNumber     OnApp</p>
-				<a data-role="button" onclick="sendRequest()">Send Request</a>
+				
 			</div>
 			
 		</div>
@@ -148,18 +166,19 @@
 
 		<!-- RegisterPage start -->
 		<div data-role="page" id="registerPage" data-dom-cache="true">
-			
+			<h3>Welcome to Recommend App</h3>
 			<div data-role="content">
 				<!-- Inputs for Phone number and Name start-->
 				<label for="phoneNumberInput">Phone number:</label>
 				<input type="text" id="phoneNumberInput" value="">
-						
+				
 				<label for="nameInput">Name:</label>
 				<input type="text" id="nameInput" value="">
 				
+						
 				<!-- AddContacts button, changes the current page as contactsPage and connects to the server.-->
 				<div style="position: absolute; left: 50%;">	<!-- at the center of the screen -->
-					<a href="#homePage" data-role="button" data-inline="true" onclick="saveAndConnect()">Save</a>
+					<a href="" data-role="button" data-inline="true" onclick="saveAndConnect()">Save</a>
 	    		</div>
 			</div>
 
@@ -172,7 +191,7 @@
 		<div data-role="page" id="responsesPage" data-dom-cache="true">
 			
 			<!-- NavigationBarHeader start -->
-			<div data-role="header" data-position="fixed" id="navbar">
+			<div data-role="header" id="navbar">
 				<div data-role="navbar" data-iconpos="bottom">
 					<ul>
 						<li><a href="#homePage" data-icon="home">Home</a></li>
@@ -188,9 +207,7 @@
 			<h3>Sent recommend requests: </h3>
 
 			<div id="sentRequests">
-				<ul data-role="listview">
-                    <!-- Requests added here -->
-				</ul>
+				<!-- Sent reuqests added here. -->
 			</div>
 		</div>
         <!-- ResponsesPage end -->
@@ -199,7 +216,7 @@
         <div data-role="page" id="settingsPage" data-dom-cache="true">
 
         	<!-- NavigationBarHeader start -->
-			<div data-role="header" data-position="fixed" id="navbar">
+			<div data-role="header" id="navbar">
 				<div data-role="navbar" data-iconpos="bottom">
 					<ul>
 						<li><a href="#homePage" data-icon="home">Home</a></li>
@@ -233,7 +250,7 @@
 
             <div data-role="fieldcontain">
                 <label for="onOffListForAutoUpdates" class="select">Automatic Updates</label>
-                <select name="selectList" id="onOffListForAutoUpdates" onchange="alert('Auto update: ' + $('#onOffListForAutoUpdates').val())">
+                <select name="onOffListForAutoUpdates" id="onOffListForAutoUpdates" onchange="alert('Auto update: ' + $('#onOffListForAutoUpdates').val())">
                     <option value="on">ON</option>
                     <option value="off">OFF</option>
                 </select>
@@ -243,7 +260,7 @@
 
             <div data-role="fieldcontain">
                 <label for="onOffListForNotifications" class="select">Notifications</label>
-                <select name="selectList" id="onOffListForNotifications" onchange="alert('Notifications: ' + $('#onOffListForNotifications').val())">
+                <select name="onOffListForNotifications" id="onOffListForNotifications" onchange="alert('Notifications: ' + $('#onOffListForNotifications').val())">
                     <option value="on">ON</option>
                     <option value="off">OFF</option>
                 </select>
@@ -252,7 +269,262 @@
         <!-- SettingsPage end -->
 
 		<script>
+			/*
+			 * Refreshes the contact list: re-checks the contacts if they are using the app, 
+			 * and displays a list of new contacts list with updated onApp fields.
+			 */
+			function refreshContactList() {
+				$("#contactsList").html('<div id="refreshMessage"><h4>Refreshing...</h4></div>');
+				
+				database.transaction(function (tx) {
+					tx.executeSql("DELETE FROM CONTACTONAPP");
+				}, function onError(err) { sqlOnError(err, "deleting previous contact on app members"); }, 
+				function onSuccess() {
+					console.log("Deleting old contact on app members from phone's db successful.");
+					contactCount = 0;
+					loadContacts();
+					$("#refreshMessage").remove();
+				});
+			}
+			/*
+			 * Gets the checked groups in the ui, and returns their values in an array.
+			 */
+			function getChosenGroups() {
+				var chosenGroups = [];
+				for (var checkboxIndex = 0; checkboxIndex < groupCount; checkboxIndex++) {
+					var groupCheckbox = document.getElementById("groupCheckbox" + checkboxIndex);
+					if (groupCheckbox.checked) {
+						chosenGroups.push(groupCheckbox.value);
+					}
+				}
+				return chosenGroups;
+			}
+			/*
+			 * Returns the contacts chosen on the user interface.
+			 * Return format: Object array(Object format: {name: contact name, phoneNumber: contact phone number})
+			 */
+			function getChosenContacts() {
+				var chosenContacts = [];
+				for (var checkboxIndex = 0; checkboxIndex < contactCount; checkboxIndex++) {
+					var checkbox = document.getElementById("checkbox" + checkboxIndex);
+					if (checkbox.checked) {
+						var split = checkbox.value.split(",");
+						var contactName = split[0];
+						var contactPhoneNumber = split[1];
+						chosenContacts.push({name: contactName, phoneNumber: contactPhoneNumber});
+					}
+				}
+				return chosenContacts;
+			}
+			/*
+			 * Unchecks all contact checkboxes on the user interface.
+			 */
+			function uncheckAllContacts() {
+				for (var i = 0; i < contactCount; i++) {
+					$("#checkbox" + i).prop("checked", false).checkboxradio("refresh");
+				}
+			}
+			
+			var changeGroupMembersClickedSecondClick = false;
+			/*
+			 * Changes the group members of a group. 
+			 * On first click explains the process, 
+			 * on second click gets the group name which its members will be changed(checked in the ui),
+			 * gets the chosen contacts and changes the group members. 
+			 * Also apples this changes to phone's database.
+			 */
+			function changeGroupMembers() {
+				if (!changeGroupMembersClickedSecondClick) {
+					changeGroupMembersClickedSecondClick = true;
+					alert("Please choose just one group and choose members, then click again.");
+				} else {
+					var chosenGroups = getChosenGroups();
+					if (chosenGroups.length != 1) {
+						alert("Choose just one group, and try again");
+						return;
+					}
+					var groupName = chosenGroups[0];	// there is already one group in the array, we checked.
+					var newGroupMembers = getChosenContacts();
+					
+					changeGroupMembersClickedSecondClick = false;	// the 3rd time they click, show the warning first like we did in the first time click.
+					
+					console.log("Changing group members of the group: " + groupName + ". " + "New members: " + JSON.stringify(newGroupMembers));
+					console.log("Deleting old members.");
+					
+					/* delete all old group members first */
+					deleteGroupMembers(groupName);
+					
+					/* check if any user is chosen, if not remove the group checkbox too. */
+					if (newGroupMembers.length == 0) {
+						alert("Deleting the group.");
+						removeGroupCheckbox(groupName);
+						groupCount--;
+						return;
+					}
+					
+					console.log("Saving the new group members.");
+					saveGroup(groupName, newGroupMembers);
+					
+					console.log("All contact group pairs:" + JSON.stringify(contactGroupPairs));
+					
+					alert("New group members saved.");
+				}
+			}
+			
+			/*
+			 * Removes the specific group checkbox from ui.
+			 */
+			function removeGroupCheckbox(groupName) {
+				for (var i = 0; i < groupCount; i++) {
+					var checkbox = document.getElementById("groupCheckbox" + i);
+					if (checkbox.value == groupName) {
+						$("#groupCheckbox" + i).remove();
+						$("#groupCheckbox" + i + "Label").remove();
+						console.log("Checkbox removed for group " + groupName);
+						return;
+					}
+				}
+			}
+			/**
+			 * Deletes the group members both from database and phone.
+			 */
+			function deleteGroupMembers(groupName) {
+				database.transaction(function (tx) {
+					tx.executeSql("DELETE FROM CONTACTGROUP WHERE groupName='" + groupName + "'");
+				}, function onError(err) { sqlOnError(err, "deleting group members"); }, function onSuccess() {console.log("Deleting old group members from phone's db successful.");});
+				
+				for (var i = 0; i < contactGroupPairs.length; i++) {
+					if (contactGroupPairs[i].groupName == groupName) {
+						contactGroupPairs.splice(i--, 1);
+					}
+				}
+				console.log("Deleting old group members from phone successful.");
+			}
 
+			var groupButtonClickedSecondClick = false;
+			/*
+			 * On first click, explains the process, and second click gets the new group name, and checked group members,
+			 * and saves the group both on the phone and the db.
+			 */
+			function addGroup() {
+				if (!groupButtonClickedSecondClick) {
+					groupButtonClickedSecondClick = true;
+					console.log("Adding new group name input to the page.");
+					
+					// append new group name input to the ui.
+					$("#groupsList").append('<label for="groupNameInput" id="groupNameInputLabel">Group Name:</label><input type="text" id="groupNameInput" value=""  />');
+					alert("Please define a name for the group and choose contacts in the group.");
+				} else {
+					var groupName = document.getElementById("groupNameInput").value;
+					console.log("Group name for new group: " + groupName);
+					if (groupName == '') {
+						alert("Group name can't be empty.");
+						return;
+					}
+					
+					groupButtonClickedSecondClick = false;	// the 3rd time they click, show the warning first, like we did in the first time click.
+					
+					var groupMembers = getChosenContacts();
+					console.log("New group members: " + JSON.stringify(groupMembers));
+					
+					console.log("Saving the group in the phone's database and phone.");
+					saveGroup(groupName, groupMembers);
+
+					addGroupCheckBoxToContactsPage(groupName);
+					
+					/* clean the input and label after saving. */
+					$("#groupNameInput").remove();
+					$("#groupNameInputLabel").remove();
+				}
+			}
+			
+			/*
+			 * Saves the group and the members both on the phone's database and phone.
+			 */
+			function saveGroup(groupName, groupMembers) {
+				
+				database.transaction(function (tx) {
+					for (var i = 0; i < groupMembers.length; i++) {
+						var member = groupMembers[i];
+						var insertString = createGroupMemberInsertString(member.name, member.phoneNumber, groupName);
+						tx.executeSql(insertString);
+					}
+					
+                }, function onError(err) { sqlOnError(err, "inserting group member"); }, function onSuccess() { // called on success.
+                		console.log("Group members have been successfully saved in the phone's db.");
+                	});
+                	
+                for (var i = 0; i < groupMembers.length; i++) {
+					groupMembers[i].groupName = groupName;	// add group field to the member object, so we can add to the contactGroupPairs.
+					contactGroupPairs.push(groupMembers[i]);
+				}
+				
+				console.log("Group members have been succesfully saved in the phone.");
+			}
+			
+			var groupCount = 0;
+			/*
+			 * Adds a group checkbox to contacts page with the given text(groupName).
+			 */
+			function addGroupCheckBoxToContactsPage(groupName) {
+				var container = $('#groupsList');
+                $('<input />', { type: 'checkbox', id: 'groupCheckbox' + groupCount, value: groupName, class: 'custom', onchange: 'showMembers(' + '"groupCheckbox' + groupCount + '")'}).appendTo(container);
+                $('<label />', { "for": 'groupCheckbox' + groupCount, id: 'groupCheckbox' + groupCount + 'Label', text: groupName }).appendTo(container);
+                groupCount++;
+                $('#groupsList').trigger('create');
+			}
+			
+			/*
+			 * Called when the user clicks on a group checkbox. Function checks(shows) or unchecks(hides) group members
+			 */
+			function showMembers(groupCheckboxName) {
+				var checkbox = document.getElementById(groupCheckboxName);
+				var groupName = checkbox.value;
+				console.log("Clicked group name: " + groupName);
+				if (checkbox.checked) {
+					console.log("Showing members.");
+					groupMembers(groupName, "show");
+				} else {
+					console.log("Hiding members.");
+					groupMembers(groupName, "hide");
+				}
+			}
+			
+			/*
+			 * Finds the group members of the given group(groupName), and acts according to the given action(action (shows, or hides members)).
+			 */
+			function groupMembers(groupName, action) {
+				for (var i = 0; i < contactGroupPairs.length; i++) {
+					if (contactGroupPairs[i].groupName == groupName) {
+						for (var j = 0; j < contactCount; j++) {
+							var contactCheckbox = document.getElementById("checkbox" + j);
+							if (contactGroupPairs[i].phoneNumber == contactCheckbox.value.split(",")[1]) {
+								console.log("Found a group member. Phone number: " + contactGroupPairs[i].phoneNumber);
+								if (action == "show") {
+									console.log("Showing.");
+									$('#checkbox' + j).prop("checked",true).checkboxradio("refresh");	// after a few times trying, the working solution.
+								} else if (action == "hide") {
+									console.log("Hiding.");
+									$('#checkbox' + j).prop("checked",false).checkboxradio("refresh");
+								}
+								break;
+							}
+						}
+					}
+				}		
+			}
+			
+			/*
+			 * Gets the parameters memberName, memberPhoneNamber, and groupName and creates an sql statement for inserting a member to the group.
+			 */
+			function createGroupMemberInsertString(memberName, memberPhoneNumber, groupName) {
+				return "INSERT INTO CONTACTGROUP VALUES('" + memberPhoneNumber + "', '" + memberName + "', '" + groupName + "')";
+			}
+			
+			/*
+			 * In the settings page, if the user wants to change his name, called. 
+			 * The username is updated on the next connection to the server(changing the username now might be a better option).
+			 */
 			function changeUsername() {
                 var newUsername = document.getElementById("newUsernameInput").value;
                 if (newUsername == '') {
@@ -262,6 +534,10 @@
                 window.localStorage.setItem("name", newUsername);
 
             }
+            
+            /*
+             * Stores the info of newly created recommend request.
+             */
 			function storeInfo() {
 				what = document.getElementById("what").value;
 				where = document.getElementById("where").value;
@@ -272,15 +548,28 @@
 				}
 				console.log("What: " + what + ", Where: " + where + ", Desc: " + description);
 				recommendPageFilled = true;
+				
+				// go to the contacts page.
 				$.mobile.pageContainer.pagecontainer("change", "#contactsPage", {transition: "none"});
 			}
+			
 			/**
-			 * Sends reply to the last gotten recommend request.
+			 * Sends reply to the chosen recommend request. requestId and replyReceiver is updated when a request is clicked.
 			 */
 			function sendReply() {
-				var reply = document.getElementById("reply");
-				socket.emit("sendReply", requestId, replyReceiver, reply.value);
-				reply.value = "";
+				var replyInput = document.getElementById("reply");
+				var requestForwardCount = 0;
+				for (var i = 0; i < allReceivedRecommendRequests.length; i++) {
+					if (allReceivedRecommendRequests[i].id == requestId) {
+						console.log("Matching request for reply: " + JSON.stringify(allReceivedRecommendRequests[i]));
+						requestForwardCount = allReceivedRecommendRequests[i].forwardCount;
+						break;
+					}
+				}
+				socket.emit("sendReply", requestId, requestForwardCount, replyReceiver, replyInput.value);
+				
+				replyInput.value = "";	// clear input area.
+				
 				alert("Reply sent.");
 			}
 			
@@ -319,62 +608,102 @@
 				
 				/* connect to the server with given phone number and name. */
 				console.log("Calling server connect function.");
-				socket.emit('connectToServer', phoneNumber, '42', name/*, pushNotificaionId, devicePlatform*/);
+				socket.emit("connectToServer", phoneNumber, 42, name, devicePlatform, pushNotificationId);
 				loadContacts();
+				$.mobile.pageContainer.pagecontainer("change", "#homePage", {transition: "none"});
 			}
 			
 			var what;
 			var where;
 			var description;
 			var receivers;
-			var requestCounter = 0;
 			var recommendPageFilled = false;
-			var sentRecommendRequests = [];
 			var database;
+			var APPLICATION_LINK = "www.example.com";
+			
 			/**
 			 * With the given -in the form, what, where, description, receivers values, sends a recommend request to the server,
 			 * and displays a request successfully has been sent message.
 			 */
-			function sendRequest() {				
+			function sendOrForwardRequest() {				
 				
-				if (!recommendPageFilled) {
-					alert("Please fill the request form in the Home Page tab.");
-                    return;
+				if (forwardingRequest) {
+					console.log("Forwarding the request.");
+				} else {
+					if (!recommendPageFilled) {
+						alert("Please fill the request form in the Home Page tab.");
+	                    return;
+	                    console.log("Sending the request.");
+					}
 				}
-				recommendPageFilled = false;
 				
 				var receivers = [];
-				
-				console.log("Sending request.");
-				
+				var receiverCount = 0;
+
 				for (var checkboxIndex = 0; checkboxIndex < contactCount; checkboxIndex++) {
 					var checkbox = document.getElementById("checkbox" + checkboxIndex);
 					if (checkbox.checked) {
+						receiverCount++;
 						console.log("Receiver: " + checkbox.value);
-						var receiverPhoneNumber = checkbox.value.split(",")[1];
-						receivers.push(receiverPhoneNumber);
+						var split = checkbox.value.split(",");
+						var receiverPhoneNumber = split[1];
+						var onApp = split[2];
+						if (onApp == "Yes") {	// the user has the app, save for delivering through our server.
+							receivers.push(receiverPhoneNumber);
+						} else {	// the user doesn't have the app, send sms.
+							console.log("Sending sms to phone number:" + receiverPhoneNumber);
+							var message = "New recommendation request from " + name + ": " + what + ", " + where + "\n" +
+										  "Description: " + description + "<br>" +
+										  "To respond the request, install Recommend App form here: " + APPLICATION_LINK;
+							var intent = "INTENT";
+							//sms.send(receiverPhoneNumber, message, smsOnSuccess, smsOnFailure);
+						}
 					}
 				}
-				if (receivers.length == 0) {
-					alert("You need to specify at least one person to send the request.");
+				if (receiverCount == 0) {
+					alert("You need to specify at least one person to send or forward the request.");
 					return;
 				}
   				console.log("Receivers: ");
   				console.log(receivers);
 				
-				// send request to the server.
-				socket.emit('sendRecommendRequest', receivers, what, where, description);
-				
-				alert("Request sent.");
-				//var progressArea = document.getElementById("progressArea");
-				//progressArea.innerHTML = "Request has been sent." + "(" + (++requestCounter) + ")";
+				// send request or forward to the server.
+				/* if a reuqest is forwarded, get the request from database, and forward to the given list. */
+				if (forwardingRequest) {
+					database.transaction(function (tx) {
+                    	tx.executeSql("SELECT * FROM RECOMMENDREQUEST WHERE ID=" + requestId , [], function (tx, results) {
+	                        var request = results.rows.item(0);
+	                        console.log("Request:" + JSON.stringify(request));
+	                        socket.emit("sendRecommendRequest", receivers, request.what, request.area, request.description, {id: request.id, sentDate: request.sentDate, sender: request.sender, forwardCount: request.forwardCount});
+	                        alert("Recommendation request forwarded to chosen contacts.");
+	                        forwardingRequest = false;
+                    	});
+                	}, function onError(err) { sqlOnError(err, "finding request with id"); }, function onSuccess() {console.log("Finding request with id successful."); });
+				} else {
+					socket.emit('sendRecommendRequest', receivers, what, where, description, null);
+					
+					// clean the inputs.
+					document.getElementById("what").value = "";
+				    document.getElementById("where").value = "";
+				    document.getElementById("desc").value = "";
+					alert("Request sent.");
+				}
+			}
+			function smsOnSuccess() {
+				console.log("SMS sent.");
+			}
+			
+			function smsOnError(e) {
+				console.log("SMS failed. Error: " + JSON.stringify(e));
 			}
 		</script>
 		<script>
 			var LOCALHOST_FOR_PC = "http://127.0.0.1:8080";
 			var LOCALHOST_FOR_MOBILE = "http://10.0.2.2:8080";
 			var CURRENT_LOCALHOST = LOCALHOST_FOR_PC;
-			var SERVER = "http://193.140.98.169:8080";
+			var server = "http://193.140.98.169:8080";
+			var serverAzure = "http://191.238.241.79:8080";
+			var SERVER = serverAzure;
 			var socket;
 			var log = document.getElementById('log');
 		</script>
@@ -398,11 +727,32 @@
 				registerForPushNotifications();
 				initializeSwipePageChange();
 				checkFirstTimeLaunch();
-					// contacts are loaded after connecting to the server.
+				loadGroups();
                 loadResponsePage();
                 loadRequestPage();
 	        }
-
+	        
+	        var contactGroupPairs = [];
+	        
+	        function loadGroups() {
+	        	database.transaction (function (tx) {
+                    tx.executeSql("SELECT DISTINCT groupName FROM CONTACTGROUP ORDER BY groupName ASC", [], function (tx, results) {
+                    	var len = results.rows.length;
+                        for (var i = 0; i < len; i++){
+                            var groupName = results.rows.item(i).groupName;
+                            addGroupCheckBoxToContactsPage(groupName);
+                        }
+                    });
+                    tx.executeSql("SELECT * FROM CONTACTGROUP", [], function (tx, results) {
+                    	var len = results.rows.length;
+                        for (var i = 0; i < len; i++){
+                            var contact = results.rows.item(i);
+                            contactGroupPairs.push(contact);
+                        }
+                    });
+                }, function onError(err) { sqlOnError(err, "selecting distinct groups and contact group pairs"); }, function onSuccess() {console.log("Group select statement, contact update and page creation successful.");});
+	        }
+	        
 	        function initializeSwipePageChange() {
 	        	$(document).ready(function() {
                     // var activePage = $.mobile.activePage[0].id;
@@ -445,8 +795,8 @@
 
                 });
 	        }
-	        var devicePlatform;
-	        var pushNotificationId;
+	        var devicePlatform = '';
+	        var pushNotificationId = '';
 
 	        function registerForPushNotifications() {
 
@@ -469,7 +819,7 @@
                 		localStorage.setItem("devicePlatform", "android");
 
                 		console.log("An Android device found, registering to GCM.");
-						pushNotification.register(registerSuccessHandler, registerErrorHandler, {"senderID":"309871994355",
+						pushNotification.register(registerSuccessHandler, registerErrorHandler, {"senderID":"960762232212",
 																								 "ecb":"onNotificationGCM"});
 
 					} else {	// an ios device, apns handles notifications.
@@ -497,8 +847,10 @@
             function registerTokenHandler(result) {
             	console.log("Registeration for push notifications successful.");
             	console.log('Registration id = '+ result);
+            	pushNotificationId = result;
             	window.localStorage.setItem("pushNotificationId", result);
             	console.log("Registeration id for push notifications saved in the device.");
+            	socket.emit('updatePushNotificationId', result);
             }
 
             function registerErrorHandler(error) {
@@ -512,17 +864,17 @@
                 switch( e.event ) {
                     case 'registered':
                         if ( e.regid.length > 0 ) {
-                        	console.log("Registeration for push notifications successful.");
                             console.log('Registration id = '+ e.regid);
-
+                            pushNotificationId = e.regid;
                             window.localStorage.setItem("pushNotificationId", e.regid);
                             console.log("Registeration id for push notifications saved in the device.");
+                            socket.emit('updatePushNotificationId', e.regid);
+                            console.log("Push notification id updated on the server.");
                         }
                     break;
          
                     case 'message':
                     	// this is the actual push notification. its format depends on the data model from the push server
-                    	alert('message = '+e.message+' msgcnt = '+e.msgcnt);
                     break;
          
                     case 'error':
@@ -538,8 +890,7 @@
             // handle APNS notifications for iOS
             function onNotificationAPN(e) {
                 if (e.alert) {
-                     // showing an alert also requires the org.apache.cordova.dialogs plugin
-                     alert("APN error: " + e.alert);
+                     alert("APN error: " + JSON.stringify(e));
                 }
 
                 if (e.badge) {
@@ -554,47 +905,68 @@
             var STATUS_SENT = 0;
             var STATUS_RECEIVED = 1;
 
-			// @TODO: Also add contacts table.
 			function openDatabaseConnection() {
-				/* open database "phone", which has 1 mb storage */
+				/* open database "test", which has 1 mb storage */
 				database = window.openDatabase("test","1.0", "Test DB", 1000000);
 				
 				/* create tables if needed. */
 				database.transaction(function (tx) {
 
-                    //tx.executeSql("DELETE FROM RECOMMENDREQUEST WHERE WHAT='test' OR WHAT='lastTest' OR WHAT='' or WHAT='t'");
+                    //tx.executeSql("DELETE FROM RECOMMENDREQUEST WHERE WHAT='test' OR WHAT='pnTest' OR WHAT='' or WHAT='t'");
                     //tx.executeSql("DELETE FROM REPLY WHERE requestId=5");
+                    //tx.executeSql("DROP TABLE RECOMMENDREQUEST");
+                    //tx.executeSql("DROP TABLE REPLY");
+                    
 					// create recommend request table if not exists
-					tx.executeSql("CREATE TABLE IF NOT EXISTS RECOMMENDREQUEST(id INTEGER PRIMARY KEY, sentDate DATE, sender VARCHAR(30), receivers VARCHAR(254), what VARCHAR(15), area VARCHAR(15), description VARCHAR(140), status BOOLEAN)");
+					tx.executeSql("CREATE TABLE IF NOT EXISTS RECOMMENDREQUEST(id INTEGER PRIMARY KEY, sentDate DATE, sender VARCHAR(30), receivers VARCHAR(254), what VARCHAR(15), area VARCHAR(15), description VARCHAR(140), status BOOLEAN, forwardedFrom VARCHAR(30) DEFAULT '', forwardCount INTEGER DEFAULT 0)");
 					
 					// create reply table if not exists
-					tx.executeSql("CREATE TABLE IF NOT EXISTS REPLY(requestId INTEGER, sentDate DATE, sender VARCHAR(30), reply VARCHAR(140), status BOOLEAN, PRIMARY KEY (requestId, sentDate))");
-
+					tx.executeSql("CREATE TABLE IF NOT EXISTS REPLY(requestId INTEGER, requestForwardCount INTEGER, sentDate DATE, sender VARCHAR(30), reply VARCHAR(140), status BOOLEAN, PRIMARY KEY (requestId, sentDate))");
+					
+					// create group table, contacts are added in the table. groupless contacts are also added in this table(groupName = '').
+					tx.executeSql("CREATE TABLE IF NOT EXISTS CONTACTGROUP(phoneNumber VARCHAR(30), name VARCHAR(40), groupName VARCHAR(30), PRIMARY KEY (phoneNumber, groupName))");
+					
+					tx.executeSql("CREATE TABLE IF NOT EXISTS CONTACTONAPP(phoneNumber VARCHAR(30), displayName VARCHAR(40), onApp BOOLEAN, PRIMARY KEY (phoneNumber, displayName))");
                     // add a test recommend request into the database.
-                    //tx.executeSql("INSERT INTO RECOMMENDREQUEST VALUES (0, '2014-17-06 11:00:00', '1234', '1234,2345', 'Supermarket', 'Galway', 'A supermarket near Galway'," + STATUS_SENT + ')');
+                    //tx.executeSql("INSERT INTO RECOMMENDREQUEST VALUES (0, '2014-17-06 11:00:00', '1234', '1234,2345', 'Supermarket', 'Galway', 'A supermarket near Galway', " + STATUS_SENT + ", '', 0)");
 
-                    //tx.executeSql("INSERT INTO RECOMMENDREQUEST VALUES (1, '2014-19-06 12:00:00', '1234', '1234,2345', 'Library', 'Galway', 'A library near Galway'," + STATUS_SENT + ')');
+                    //tx.executeSql("INSERT INTO RECOMMENDREQUEST VALUES (1, '2014-19-06 12:00:00', '1234', '1234,2345', 'Library', 'Galway', 'A library near Galway'," + STATUS_SENT + ", '', 0)");
 
-                    //tx.executeSql("INSERT INTO RECOMMENDREQUEST VALUES (2, '2014-20-06 12:22:35', '1234', '1234,2345', 'Plumber', 'Dublin', 'A plumber near Dublin city center'," + STATUS_SENT + ')');
-                    //tx.executeSql("INSERT INTO RECOMMENDREQUEST VALUES (5, '2014-21-06 15:29:35', '2345', '', 'Restaurant', 'Dublin', 'Somewhere cheap'," + STATUS_RECEIVED + ')');
+                    //tx.executeSql("INSERT INTO RECOMMENDREQUEST VALUES (2, '2014-20-06 12:22:35', '1234', '1234,2345', 'Plumber', 'Dublin', 'A plumber near Dublin city center'," + STATUS_SENT + ", '', 0)");
+                    //tx.executeSql("INSERT INTO RECOMMENDREQUEST VALUES (4, '2014-20-06 14:22:35', '3456', '', 'Plumber', 'Dublin', 'A plumber near Dublin city center'," + STATUS_RECEIVED + ", '2345', 1)");
+                    //tx.executeSql("INSERT INTO RECOMMENDREQUEST VALUES (5, '2014-21-06 15:29:35', '2345', '', 'Restaurant', 'Dublin', 'Somewhere cheap'," + STATUS_SENT + ", '', 0)");
 
                     // insert a test reply into the database.
-                    //tx.executeSql("INSERT INTO REPLY VALUES(1, '2014-22-06 12:17:42', '2345', 'The Books, Contact: 089 435 43 53'," + STATUS_RECEIVED + ')');
+                    //tx.executeSql("INSERT INTO REPLY VALUES(2, 0, '2014-24-06 12:17:42', '3456', 'The Lib, Contact: 091 222 23 23'," + STATUS_RECEIVED + ')');
 
-                    //tx.executeSql("INSERT INTO REPLY VALUES(0, '2014-21-06 13:17:42', '3456', 'Aldi, close to the university'," + STATUS_RECEIVED + ')');
+                    //tx.executeSql("INSERT INTO REPLY VALUES(5, 1, '2014-21-06 13:17:42', '3456', 'Kai is good. 089 223 2322'," + STATUS_RECEIVED + ')');
 
-                    //tx.executeSql("INSERT INTO REPLY VALUES(2, '2014-23-06 14:17:42', '2345', 'The Plumber, Phone: 091 435 9922'," + STATUS_RECEIVED + ')');
+                    //tx.executeSql("INSERT INTO REPLY VALUES(2, '2014-23-06 14:17:42', 2, '2345', 'The Plumber, Phone: 091 435 9922'," + STATUS_RECEIVED + ')');
 
-                    //tx.executeSql("INSERT INTO REPLY VALUES(2, '2014-23-06 16:17:32', '3456', 'Near Dublin city center, Contact: 085 765 43 21'," + STATUS_RECEIVED + ')');
+                    //tx.executeSql("INSERT INTO REPLY VALUES(2, '2014-23-06 16:17:32', 0, '3456', 'Near Dublin city center, Contact: 085 765 43 21'," + STATUS_RECEIVED + ')');
 
 
-				}, sqlOnError_CreateDb /* function called on error */, function () { console.log("OpenDatabaseConnection Successful."); });
+				}, function onError(err) { sqlOnError(err, "creating database tables"); }, function onSuccess() { console.log("OpenDatabaseConnection Successful."); });
 			}
 			
-			function sqlOnError_CreateDb(err) {
-				alert("SQL Error on database create statements = " + err);
-				console.log("SQL Error on database create statements = ");
-				console.log(err);
+			/*
+			 * Called with error and action description of the sql statement, if any error occurs during the execution of the statement.
+			 */
+			function sqlOnError(err, actionDescription) {
+				alert("SQL error on " + actionDescription + ". Error: " + JSON.stringify(err));
+				console.log("SQL error on " + actionDescription + ". Error: " + JSON.stringify(err));
+			}
+
+			/*
+			 * Finds contact's display name with given phone number. If contact is in the contact list, returns name, else returns phone number
+			 */
+			function findContactName(phoneNumber) {
+				// for (var i = 0; i < contactCount; i++) {
+					// if (allContacts[i].phoneNumbers != null && allContacts[i].phoneNumbers[0].value == phoneNumber) {
+						// return allContacts[i].displayName;
+					// }
+				// }
+				return phoneNumber;
 			}
 
             function openSocketConnection() {
@@ -608,21 +980,32 @@
                  */
                 socket.on('getRecommendRequest', function (recommendRequest) {
                     /* save received request in the db. */
+                    var forwardedFrom = '';
                     database.transaction(function (tx) {
+                    	if (recommendRequest.forwardedFrom != undefined) {	// this is a forwarded request.
+                    		console.log("Received a forwarded recommend request.");
+                    		forwardedFrom = recommendRequest.forwardedFrom;
+                    	}
                         tx.executeSql("INSERT INTO RECOMMENDREQUEST VALUES (" + recommendRequest.id +", '" + recommendRequest.date + "', '" + recommendRequest.from + "', '" +
                                 "', '" + recommendRequest.what + "', '" + recommendRequest.where + "', '" +
-                                recommendRequest.desc + "', " + STATUS_RECEIVED + ")");
+                                recommendRequest.desc + "', " + STATUS_RECEIVED + ", '" + forwardedFrom + "', " + recommendRequest.forwardCount + ")");
 
-                    }, sqlOnError_ReceivedRequestSave /* function called on error */, function () { console.log("Received recommend request saved in the phone's db."); });
+                    }, function onError(err) { sqlOnError(err, "inserting received recommend request"); }, function onSuccess() { console.log("Received recommend request saved in the phone's db."); });
 
+                    var from = findContactName(recommendRequest.from);
                     /* update received requests list */
-                    var requestString = recommendRequest.id + ", " + recommendRequest.what + ", " +
-                                        recommendRequest.where + " From: " +recommendRequest.from;
                     
-                    loadReceivedRequests();
-
+                    /* make recommendrequest compatible wirh the addNewReceivedRequestToList(recommendRequest) function. */
+                    recommendRequest.sentDate = recommendRequest.date;
+                    recommendRequest.sender = recommendRequest.from;
+                    recommendRequest.area = recommendRequest.where;
+                    recommendRequest.description = recommendRequest.desc;
+                    
+                    addNewReceivedRequestToList(recommendRequest);
+                    allReceivedRecommendRequests.push({id: recommendRequest.id, sentDate: recommendRequest.date, sender: recommendRequest.from, receivers: '', what: recommendRequest.what, area: recommendRequest.where, description: recommendRequest.desc, 
+                    									forwardedFrom: forwardedFrom, forwardCount: recommendRequest.forwardCount});
                     /* inform the user and redirect to the request page. */
-                    alert("New recommend request: " + requestString + " Description: " + recommendRequest.desc);
+                    alert("New recommend request: " + recommendRequest.what + ", " + recommendRequest.where + " Description: " + recommendRequest.desc);
                     $.mobile.pageContainer.pagecontainer("change", "#requestsPage", {transition: "none"});
                 });
 
@@ -634,17 +1017,35 @@
                 socket.on('getReply', function (reply) {
                     /* save reply in the phone's database. */
                     database.transaction(function (tx) {
-                        tx.executeSql("INSERT INTO REPLY VALUES (" + reply.requestId +", '" + reply.date + "', '" + reply.sender + "', '" +
+                        tx.executeSql("INSERT INTO REPLY VALUES (" + reply.requestId +", " + reply.requestForwardCount + ", '" + reply.date + "', '" + reply.sender + "', '" +
                                 reply.reply + "'," + STATUS_RECEIVED + ")");
-                    }, sqlOnError_ReceivedReplySave /* function called on error */, function () { console.log("Received reply saved in the phone's db."); });
+                    }, function onError(err) { sqlOnError(err, "inserting received reply"); }, function onSuccess() { console.log("Received reply saved in the phone's db."); });
                     console.log("New Reply:" + JSON.stringify(reply));
                     // var previousMessages = incomingRequestArea.value;
-                    var replyMessage = "New reply from user " + reply.sender + ": Request id: " + reply.requestId + " date: " + reply.date + "Reply: " + reply.reply;
+                    var sender = findContactName(reply.sender);
+                    var replyMessage = "New reply from user " + sender + ": Request id: " + reply.requestId + " date: " + reply.date + ". Reply: " + reply.reply;
                     // totalRecommendRequests += "<br>" + replyMessage;
                     // incomingRequestArea.innerHTML = totalRecommendRequests;
-
-                    loadReceivedResponses();
-
+                    
+                    // a better option may be used instead of loading all responses.
+                    //loadReceivedResponses();
+                    
+                    // use if you want a link based reply page.
+                    // // just add new reply instead of loading all responses.	
+                    // var requestPage = $("#request" + reply.requestId);
+                    // var replyString = "From: " + reply.sender + " Date: " + reply.date + '<br>' + reply.reply + '<br>';
+                    // /* if request page does not exist, create a new page, and append reply.
+                     // * if the page exists append new reply to the request page.
+                     // */
+                    // if (requestPage.length == 0) {	// page does not exist.
+                    	// console.log("First reply for the request, creating the page and adding reply.");
+                    	// addNewReplyPage(reply.requestId, replyString);
+                    // } else {
+                    	// console.log("Adding reply to existed request page.");
+                    	// $("#request" + reply.requestId + "Content").append(replyString);
+                    // }
+                    reply.sentDate = reply.date;
+                    addReplyToResponsesPage(reply);
                     /* inform the user and redirect to the request page. */
                     alert(replyMessage);
                     $.mobile.pageContainer.pagecontainer("change", "#responsesPage", {transition: "none"});
@@ -663,48 +1064,51 @@
                     }
                     */
                 });
-
+                
+                /*
+                 * Updates the contact list on the ui with the information received from server(contacts with onApp fields).
+                 */
                 socket.on('updateUsersOnApp', function (contacts) {
                 	console.log("Checking contacts process successful. Updating contact list.");
-                    contactCount = contacts.length;
-                    for (var i = 0; i < contacts.length; i++) {
-                        // var checkBoxId = '"checkBox' + i + '"';
-                        var contact = contacts[i];
-                        var onApp = contact.onApp ? 'Yes' : 'No';
-                        var userData = contact.displayName + ',' + contact.phoneNumber + ', ' + onApp;
-//
-                        // $("#contactsList").append('<input type="checkbox" id=' + checkBoxId + ' class="custom" />');
-                        // $("#contactsCheckList").append('<label for=' + checkBoxId + '>' + userData + '</label>');
-                        addCheckboxToContactsPage(userData, i);
-                    }
+                	
+                	addContactsToDatabase(contacts);
+                	addContactsToContactsPage(contacts);
                 });
 
                 socket.on('saveSentRecommendRequest', function (recommendRequest) {
                     console.log("Request delivered to the server. Saving sent recommend request in the phone..");
 
                     database.transaction(function (tx) {
-                    	console.log("INSERT INTO RECOMMENDREQUEST VALUES (" + recommendRequest.id +", '" + recommendRequest.date + "', '" + recommendRequest.from + "', '" +
-                                                                                recommendRequest.to.toString() + "', '" + recommendRequest.what + "', '" + recommendRequest.where + "', '" +
-                                                                                recommendRequest.desc + "', " + STATUS_SENT + ")");
                         tx.executeSql("INSERT INTO RECOMMENDREQUEST VALUES (" + recommendRequest.id +", '" + recommendRequest.date + "', '" + recommendRequest.from + "', '" +
                                                                                 recommendRequest.to.toString() + "', '" + recommendRequest.what + "', '" + recommendRequest.where + "', '" +
-                                                                                recommendRequest.desc + "', " + STATUS_SENT + ")");
+                                                                                recommendRequest.desc + "', " + STATUS_SENT + ", '', 0)");
 
-                    }, sqlOnError_SentRequestSave /* function called on error */, function () { console.log("Sent recommend request saved in the phone's db."); });
+                    }, function onError(err) { sqlOnError(err, "inserting sent recommend request"); }, function onSuccess() { console.log("Sent recommend request saved in the phone's db."); });
 					
-					loadSentRecommendRequests();
-
+					// add request to ui.
+					addRequestToResponsesPage(recommendRequest.id, recommendRequest.what, recommendRequest.where);
+					
+					// add request to phone.
+					allSentRecommendRequests.push({id: recommendRequest.id, sendDate: recommendRequest.date, sender: recommendRequest.from, receivers: recommendRequest.to.toString(), what: recommendRequest, area: recommendRequest.where, description: recommendRequest.desc});
                 });
 
                 socket.on('saveSentReply', function (reply) {
                     console.log("Reply delivered to the server. Saving sent reply in the phone.");
 
                     database.transaction(function (tx) {
-                        tx.executeSql("INSERT INTO REPLY VALUES (" + reply.requestId +", '" + reply.date + "', '" + reply.sender + "', '" +
+                        tx.executeSql("INSERT INTO REPLY VALUES (" + reply.requestId + ", " + reply.requestForwardCount + ", '" + reply.date + "', '" + reply.sender + "', '" +
+                                reply.reply + "', " + STATUS_SENT + ")");
+                                console.log("INSERT INTO REPLY VALUES (" + reply.requestId +", '" + reply.date + "', '" + reply.sender + "', '" +
                                 reply.reply + "', " + STATUS_SENT + ")");
 
-                    }, sqlOnError_SentReplySave /* function called on error */, function () { console.log("Sent reply saved in the phone's db."); });
+                    }, function onError(err) { sqlOnError(err, "inserting sent reply"); }, function onSuccess() { console.log("Sent reply saved in the phone's db."); });
                 });
+                
+                socket.on('notifiedOfForwardedRequest', function (receiver) {
+                	console.log("Your message has been forwarded to " + receiver + " by another person.");
+                	alert("Your message has been forwarded to " + receiver + " by another person.");
+                });
+                
                 /**
                  * Called when user disconnects from the server.
                  */
@@ -722,41 +1126,57 @@
 
             }
 
-            function sqlOnError_ReceivedRequestSave(err) {
-            	alert("SQL error on inserting received recommend request = " + JSON.stringify(err));
-            	console.log("SQL error on inserting received recommend request = " + JSON.stringify(err));
+            function addContactsToDatabase(contacts) {
+            	database.transaction(function (tx) {
+					for (var i = 0; i < contacts.length; i++) {
+						var contact = contacts[i];
+						var onApp = contact.onApp ? 1 : 0;
+						var insertString = "INSERT INTO CONTACTONAPP VALUES('" + contact.phoneNumber + "', '" + contact.displayName + "', " + onApp + ")";
+						tx.executeSql(insertString);
+					}
+					
+                }, function onError(err) { sqlOnError(err, "inserting contact to CONTACTONAPP table"); }, function onSuccess() { // called on success.
+                		console.log("Contacts with onApp fields has been saved in the phone's db.");
+                	});
             }
+            function addContactsToContactsPage(contacts) {
+            	var contactsNotOnApp = [];
+                for (var i = 0; i < contacts.length; i++) {
+                    // var checkBoxId = '"checkBox' + i + '"';
+                    var contact = contacts[i];
+                    var onApp = contact.onApp ? 'Yes' : 'No';
+                    var userData = contact.displayName + ',' + contact.phoneNumber + ',' + onApp;
+                    if (contact.onApp) {	// add users who are on app first.
+                    	addContactCheckboxToContactsPage(userData);
+                    } else {
+                    	contactsNotOnApp.push(userData);
+                    }
+                }
+                
+                // add onApp = 'No' contacts later.
+                for (var i = 0; i < contactsNotOnApp.length; i++) {
+                	addContactCheckboxToContactsPage(contactsNotOnApp[i]);
+                }
+                console.log("Contact list updated.");
 
-            function sqlOnError_ReceivedReplySave(err) {
-            	alert("SQL error on inserting received reply = " + JSON.stringify(err));
-            	console.log("SQL error on inserting received reply = " + JSON.stringify(err));
+                $("#contactsList").trigger("create");	// enhance the contacts list, it gives jqm look to the list.
             }
-
-            function sqlOnError_SentRequestSave(err) {
-					alert("SQL error on inserting sent recommend request = " + JSON.stringify(err));
-					console.log("SQL error on inserting sent recommend request = " + JSON.stringify(err));
-			}
-
-			function sqlOnError_SentReplySave(err) {
-				alert("SQL error on inserting sent reply = " + JSON.stringify(err));
-				console.log("SQL error on inserting sent reply = " + JSON.stringify(err));
-			}
 
 			function alertCallback() {
                     console.log('Connection problem occurred.');
             }
 
-            var pushNotificationRegisterId;
+            var recommendAppUsedBefore = false;
             /*
              * Checks if the app is used for the first time, and changes the page according to the answer.
              * If yes, connects to the server, else redirects to the register page.
              */
             function checkFirstTimeLaunch() {
 
-                window.localStorage.clear();	// to test.
+               //window.localStorage.clear();	// clear storage, for testing purposes.
 
                 // check if the user is using the app for the first time.
-                var recommendAppUsedBefore = window.localStorage.getItem("recommendAppUsedBefore");
+                recommendAppUsedBefore = window.localStorage.getItem("recommendAppUsedBefore");
                 if (recommendAppUsedBefore) {	// if used
                     console.log("App is used before. Displaying home page.");
 
@@ -764,16 +1184,20 @@
                     phoneNumber = window.localStorage.getItem("phoneNumber");
                     name = window.localStorage.getItem("name");
 
-                    if (!phoneNumber || !name || !pushNotificationRegisterId || !devicePlatform) {	// if any of them is missing.
+                    if (!phoneNumber || !name) {	// if any of them is missing.
                         alert("Couldn't find stored login data.");
                         console.log("Couldn't find stored data. Redirecting to register page.");
                         $.mobile.pageContainer.pagecontainer("change", "#registerPage", {transition: "none"});
                         return;
                     }
 
-                    socket.emit("connectToServer", phoneNumber, 42, name/*, pushNotificationId, devicePlatform*/);
-                    loadContacts();
+                    // load contacts from db.
+                    console.log("App is used before. Loading contacts from database.");
+                    loadContactsFromDatabase();
 
+                    // connect to the server.
+                    console.log("Connecting to the server with phone number: " + phoneNumber + ", name: " + name);
+                    socket.emit("connectToServer", phoneNumber, 42, name, devicePlatform, pushNotificationId);
                 } else {
                     console.log("App is used for the first time. Redirecting to register page.");
                     alert("Registeration needed.");
@@ -783,13 +1207,29 @@
                 }
             }
 
+            function loadContactsFromDatabase() {
+            	var contacts = [];
+            	database.transaction (function (tx) {
+                    tx.executeSql("SELECT * FROM CONTACTONAPP ORDER BY displayName ASC", [], function (tx, results) {
+                        var len = results.rows.length;
+                        if (len == 0) {	// no replies for anything.
+                        	return;
+                        }
+                        for (var i = 0; i < len; i++) {
+                        	contacts.push(results.rows.item(i));
+                        }
+                        addContactsToContactsPage(contacts);
+                    });
+                }, function onError(err) { sqlOnError(err, "loading contacts from database"); }, function onSuccess() {console.log("Response select statement and page creation successful.");});
+            }
+            var allContacts = null;
             var contactCount = 0;
             /*
              * Loads all the contacts in the phone.
              */
             function loadContacts() {
                 // save a test contact.(working)
-                //var newContact = navigator.contacts.create({displayName: "testUser", phoneNumbers: ["5678"]});
+                //var newContact = navigator.contacts.create({displayName: "Hugh", phoneNumbers: ["3456"]});
                 //newContact.save(contactSaveOnSuccess, contactSaveOnError);
                 var options = new ContactFindOptions();
     			options.filter = ""; 
@@ -808,10 +1248,11 @@
             }
 
             /*
-             * @TODO: send all contacts to the server, and get the results back if they are using the app, and update in the page.
+             * 
              * Called if contacts found.
              */
             function contactFindOnSuccess(contact) {
+            	allContacts = contact;
                 console.log("Finding all contacts, successful.");
                 console.log("Checking contacts whether they are on app, on the server.");
                 socket.emit('checkContactsOnApp', contact);
@@ -824,70 +1265,89 @@
                 alert('Error: ' + contactError);
             }
 
-            function addCheckboxToContactsPage(name, id) {
+            function addContactCheckboxToContactsPage(contactInfo) {
                 var container = $('#contactsList');
 
-                $('<input />', { type: 'checkbox', id: 'checkbox'+id, value: name, class: 'custom' }).appendTo(container);
-                $('<label />', { for: 'checkbox'+id, text: name }).appendTo(container);
+                $('<input />', { type: 'checkbox', id: 'checkbox' + contactCount, value: contactInfo, class: 'custom' }).appendTo(container);
+                $('<label />', { "for": 'checkbox' + contactCount, text: contactInfo }).appendTo(container);
+                contactCount++;
             }
 
             function loadResponsePage() {
+            	loadSentRecommendRequests();
                 loadReceivedResponses();
-                loadSentRecommendRequests();
             }
-
+            
             function loadReceivedResponses() {
                 database.transaction (function (tx) {
-                    tx.executeSql("SELECT * FROM REPLY " + "WHERE STATUS=" + STATUS_RECEIVED + " ORDER BY requestId ASC", [], function (tx, results) {
+                    tx.executeSql("SELECT * FROM REPLY " + "WHERE STATUS=" + STATUS_RECEIVED + " ORDER BY sentDate ASC", [], function (tx, results) {
                         var len = results.rows.length;
                         if (len == 0) {	// no replies for anything.
                         	return;
                         }
-                        var oldRequestId = results.rows.item(0).requestId;
-                        var totalReplies = '';
+                        /* use this if you want a link based reply page. */
+                        // var oldRequestId = results.rows.item(0).requestId;
+                        // var totalReplies = '';
+                        // for (var i = 0; i < len; i++) {
+                            // var reply = results.rows.item(i);
+                            // var replyString = createReplyString(reply);
+                            // /* if loop passes to the other request, create and insert the reply page for current request */
+                            // if (reply.requestId !== oldRequestId) {
+// 
+                                // addNewReplyPage(oldRequestId, totalReplies);
+// 
+                                // // update iteration variables.
+                                // oldRequestId = reply.requestId;
+                                // totalReplies = replyString + '<br>';
+// 
+                            // } else {
+                                // totalReplies += replyString + '<br>';
+                            // }
+                            // if (i == len - 1) {
+                                // addNewReplyPage(reply.requestId, totalReplies);
+                            // }
+                        // }
                         for (var i = 0; i < len; i++) {
-                            var reply = results.rows.item(i);
-                            var replyString = createReplyString(reply);
-                            /* if loop passes to the other request, create and insert the reply page for current request */
-                            if (reply.requestId !== oldRequestId) {
-
-                                addNewReplyPage(oldRequestId, totalReplies);
-
-                                // update iteration variables.
-                                oldRequestId = reply.requestId;
-                                totalReplies = replyString + '<br>';
-
-                            } else {
-                                totalReplies += replyString + '<br>';
-                            }
-                            if (i == len - 1) {
-                                addNewReplyPage(reply.requestId, totalReplies);
-                            }
+                        	var reply = results.rows.item(i);
+                        	addReplyToResponsesPage(reply);
                         }
                     });
-                }, sqlOnError_GetReceivedReplies, function () {console.log("Response select statement and page creation successful.");});
-            }
-
-            function sqlOnError_GetReceivedReplies(err) {
-            	alert("SQL error on selecting received replies = " + JSON.stringify(err));
-            	console.log("SQL error on selecting replies replies = " + JSON.stringify(err));
+                }, function onError(err) { sqlOnError(err, "selecting received replies"); }, function onSuccess() {console.log("Response select statement and page creation successful.");});
             }
 
             function createReplyString (reply) {
                 return "From: " + reply.sender + " Date: " + reply.sentDate + '<br>' + reply.reply + '<br>';
             }
-
+            function addReplyToResponsesPage(reply) {
+            	var requestNoResponse = $("#request" + reply.requestId + "NoResponse");
+                if (requestNoResponse.length != 0) {
+                	requestNoResponse.remove();
+                }
+            	var forwardCount = reply.requestForwardCount;
+            	var forwardString = '';
+            	if (forwardCount != 0) {
+            		forwardString += " (+" + forwardCount + ")";
+            	}
+            	$("#request" + reply.requestId).append('<div data-role="collapsible">' + 
+											'<h3>From ' + reply.sender + forwardString + '</h3>' + 
+											'<p> Reply: ' + reply.reply + '</p>' +
+											'<p> Date: ' + reply.sentDate + '</p>' +
+											'</div>').trigger("create");
+            }
+            
             function addNewReplyPage(requestId, totalReplies) {
                 var pageId = '"request' + requestId + '"';
                 var pageString = '<div data-role="page" id=' + pageId +  '>' +
                         '<div data-role="header">' +
                         '<a data-iconpos="left" data-icon="back" href="#responsesPage" data-role="button">Back</a>' +
                         '<h1>Responses for Request</h1></div>' +
-                        '<div data-role="content">' + totalReplies + '</div></div>';
+                        '<div data-role="content" ' + 'id="' + 'request' + requestId + 'Content"' + '>' + totalReplies + '</div></div>';
 
                 var requestPage = $(pageString);
                 requestPage.appendTo($.mobile.pageContainer);
             }
+
+            var allSentRecommendRequests = [];
 
 			function loadSentRecommendRequests() {
                 database.transaction(function (tx) {
@@ -895,21 +1355,18 @@
                         var len = results.rows.length;
                         for (var i = 0; i < len; i++){
                             var request = results.rows.item(i);
-                            var requestString = "Responses to " + request.what + ", " + request.area;
-                            // add requests stored in the phone to the responses page.
-                            $('#sentRequests ul').append(
-                                    $('<li>').append(
-                                            $('<a>').attr('href','#request' + request.id).append(
-                                                    $('<span>').attr('class', 'tab').append(requestString)
-                            )));
+                            allSentRecommendRequests.push(request);
+                            addRequestToResponsesPage(request.id, request.what, request.area);
                         }
                     });
-                }, sqlOnError_GetSentRequests /* function called on error */, function () {console.log("Sent recommend request select statement and page creation successful."); });
+                }, function onError(err) { sqlOnError(err, "selecting sent recommend requests"); }, function onSuccess() {console.log("Sent recommend request select statement and page creation successful."); });
 			}
-
-			function sqlOnError_GetSentRequests(err) {
-				alert("SQL error on selecting sent recomend requests = " + JSON.stringify(err));
-				console.log("SQL error on selecting sent recomend requests = " + JSON.stringify(err));
+			
+			function addRequestToResponsesPage(id, what, where) {
+				var requestString = "Responses to " + what + ", " + where;
+                // add request to the responses page.
+                $("#sentRequests").append('<div id="request' + id + '"><h4>' + requestString + '</h4></div>');
+                $("#request" + id).append('<p id="request' + id + 'NoResponse">' + 'No responses yet</p>');
 			}
 
             function loadRequestPage() {
@@ -919,44 +1376,80 @@
             /* these values are updated when user clicks on a received request */
             var requestId = -1; // the request id of the clicked request.
             var replyReceiver = ''; // the owner of the clicked request.
-
+            var allReceivedRecommendRequests = [];
             function loadReceivedRequests() {
                 database.transaction (function (tx) {
                     tx.executeSql("SELECT * FROM RECOMMENDREQUEST " + "WHERE STATUS=" + STATUS_RECEIVED, [], function (tx, results) {
                         var len = results.rows.length;
                         for (var i = 0; i < len; i++) {
                             var request = results.rows.item(i);
-                            var requestString = createRequestString(request);
-                            addNewReceivedRequestToList(requestString);
+                            allReceivedRecommendRequests.push(request);
+                            addNewReceivedRequestToList(request);
                         }
+                        //addOnClickMethodsToRequests();
                     });
-                }, sqlOnError_GetReceivedRequests, function () {console.log("Received recommend request select and page creation successful.");});
+                }, function onError(err) { sqlOnError(err, "selecting received requests"); }, function onSuccess() {console.log("Received recommend request select and page creation successful.");});
+                
             }
-
-            function sqlOnError_GetReceivedRequests(err) {
-				alert("SQL error on selecting received recomend requests = " + JSON.stringify(err));
-				console.log("SQL error on selecting received recomend requests = " + JSON.stringify(err));
-			}
+            
+            // function addOnClickMethodsToRequests() {
+            	// console.log("Adding onClick methods for requests.");
+            	// for (var i = 0; i < requestCounter; i++) {
+            		// $("#requestPopupForward" + i).click(function () {
+						// updateRequestIdAndReplyReceiver($("#requestPopup" + i).text());
+						// console.log($("#requestPopup" + i).text());
+					// });
+            	// }
+            // }
 
             function createRequestString(request) {
                 return request.id + ", " + request.what + ", " + request.area + " From: " + request.sender;
             }
-            function addNewReceivedRequestToList(requestString) {
-                $('#receivedRequests ul').append(
-                        $('<li>').append(
-                                $('<a>').attr('href','#replyPage').append(
-                                        $('<span>').attr('class', 'tab').append(requestString).click(function () {
-                                            console.log("Clicked on the request, redirecting to reply page.");
-                                            updateRequestIdAndReplyReceiver(requestString);
-                                        })
-                                )));
+            
+            var requestCounter = 0;
+            function addNewReceivedRequestToList(request) {
+                // $('#receivedRequests ul').append(
+                        // $('<li>').append(
+                                // $('<a>').attr('href','#replyPage').append(
+                                        // $('<span>').attr('class', 'tab').append(requestString).click(function () {
+                                            // console.log("Clicked on the request, redirecting to reply page.");
+                                            // updateRequestIdAndReplyReceiver(requestString);
+                                        // })
+                                // )));
+                                
+                // /* append a popup menu containing reply and forward choises. */
+            	// $("#receivedRequests").append('<a href="#request' + requestCounter + 'Popup"' + 'data-rel="popup" data-role="button"' + ' id=' + '"requestPopup'  + requestCounter + '"' + ' data-transition="none">Placeholder</a>'
+            	// + '<div data-role="popup" id="request' + requestCounter + 'Popup" >' +
+						// '<ul data-role="listview" data-inset="true">' +
+							// '<li data-role="divider" data-theme="b">Action</li>' +
+							// '<li><a href="#replyPage"' + ' onclick="updateRequestIdAndReplyReceiver(\'' + requestString + '\')"' + '>Reply</a></li>' +
+							// '<li><a href="#contactsPage"' + ' onclick="forwardUpdate(\'' + requestString + '\')"' + 'id="requestPopupForward' + requestCounter + '">Forward</a></li>' + 
+						// '</ul>' +
+				// '</div>');
+				// $("#requestPopup" + requestCounter).text(requestString);
+				// requestCounter++;
+				var requestString = "From: " + request.sender + "  Date: " + request.sentDate;
+				/* append collapsible containing the description of the request */
+				$("#receivedRequests").append('<div data-role="collapsible"' + ' id=' + '"requestCollapsible'  + requestCounter + '">' + 
+											'<h3>' + requestString + '</h3>' + 
+											'<p> What: ' + request.what + '</p>' +
+											'<p> Where: ' + request.area + '</p>' +
+											'<p> Description: ' + request.description + '</p>' +
+											'<a href="#replyPage" data-role="button" id="request' + requestCounter + 'ReplyButton"' + ' data-inline="true"' + ' onclick="updateRequestIdAndReplyReceiver(' + request.id + "," + ' \'' + request.sender + "\'" + ')"' + '>Respond</a>' +
+											'<a href="#contactsPage" data-role="button" id="request' + requestCounter + 'ForwardButton"' + ' data-inline="true"' + ' onclick="forwardUpdate('+ request.id + "," + ' \'' + request.sender + '\'' + ')"' + '>Forward</a>' + 
+											'</div>').trigger("create");
+				requestCounter++;
             }
-            function  updateRequestIdAndReplyReceiver(requestString) {
-                var spaceIndex = requestString.indexOf(",");
-                requestId = parseInt(requestString.substring(0, spaceIndex));
-                var colonIndex = requestString.lastIndexOf(":");
-                replyReceiver = requestString.substring(colonIndex + 2);
-                console.log("Request id: " + requestId + ", Reply receiver: " + replyReceiver);
+            
+            var forwardingRequest = false;
+            function forwardUpdate(id, receiver) {
+            	updateRequestIdAndReplyReceiver(id, receiver);
+            	forwardingRequest = true;
+            }
+            function  updateRequestIdAndReplyReceiver(id, receiver) {
+                requestId = id;
+                replyReceiver = receiver;
+                console.log("Request id: " + requestId + ", Receiver: " + replyReceiver);
             }
 			// for pc, just call init(). for mobile phones, instead of calling init, call phonegap's function document.addEventListener(...);
 			//init();
